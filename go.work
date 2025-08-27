@@ -1,8 +1,8 @@
 go 1.24.0
 
 use (
-	./services/deposit
 	./services/gateway
+	./services/account
+	./services/transaction
 	./shared
-	./services/transfer
 )
