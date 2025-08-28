@@ -8,6 +8,7 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
 
 service AccountService {
   rpc GetAccount(GetAccountRequest) returns (Account) {
@@ -18,7 +19,7 @@ service AccountService {
 
   rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse) {
     option (google.api.http) = {
-      get: "/v1/accounts/{account_id}"
+      get: "/v1/accounts"
     };
   }
 
@@ -31,19 +32,18 @@ service AccountService {
 
   rpc UpdateAccount(UpdateAccountRequest) returns (Account) {
     option (google.api.http) = {
-      patch: "/v1/accounts/{account.id}"
+      patch: "/v1/accounts/{account.account_id}"
       body: "account"
     };
   }
 
   rpc DeleteAccount(DeleteAccountRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      delete: "/v1/accounts"
-      body: "*"
+      delete: "/v1/accounts/{account_id}"
     };
   }
 
-  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse) {
+  rpc GetBalance(GetBalanceRequest) returns (Balance) {
     option (google.api.http) = {
       get: "/v1/accounts/{account_id}/balance"
     };
@@ -53,15 +53,20 @@ service AccountService {
 message Account {
   string account_id = 1;
   string user_id = 2;
-  string balance = 3;
-  Currency currency = 4;
-  google.protobuf.Timestamp created_at = 5;
-  google.protobuf.Timestamp updated_at = 6;
+  Currency currency = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message Balance {
+  string account_id = 1;
+  double amount = 2;
+  Currency currency = 3;
+  google.protobuf.Timestamp last_updated = 4;
 }
 
 message GetAccountRequest {
-  string user_id = 1;
-  Currency currency = 2;
+  string account_id = 1;
 }
 
 message ListAccountsRequest {
@@ -90,14 +95,7 @@ message DeleteAccountRequest {
 }
 
 message GetBalanceRequest {
-  string user_id = 1;
-  Currency currency = 2;
-}
-
-message GetBalanceResponse {
-  string balance = 1;
-  string blocked_balance = 2;
-  string available_balance = 3;
+  string account_id = 1;
 }
 
 enum Currency {
