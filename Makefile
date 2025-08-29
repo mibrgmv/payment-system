@@ -1,7 +1,6 @@
 SERVICES := account transaction gateway
-PROTO_DIRS := $(foreach service,$(SERVICES),services/$(service)/proto)
 
-.PHONY: help proto-all proto-clean proto-lint $(addprefix proto-,$(PROTO_SERVICES))
+.PHONY: help proto-all proto-clean $(addprefix proto-,$(SERVICES))
 
 help:
 	@echo "Available targets:"
@@ -17,7 +16,7 @@ deps:
 	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest
 	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@latest
 
-proto-all: $(addprefix proto-,$(PROTO_SERVICES))
+proto-all: proto-account proto-transaction
 
 proto-account:
 	@echo "Generating account service protobuf..."
