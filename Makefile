@@ -21,14 +21,28 @@ proto-all: $(addprefix proto-,$(PROTO_SERVICES))
 
 proto-account:
 	@echo "Generating account service protobuf..."
-	@mkdir -p services/account/internal/protogen/account/v1
-	protoc -I=services/account/api/v1 -I=third_party \
-		--go_out=services/account/internal/protogen/account/v1 \
+	@mkdir -p services/account/internal/protogen/account
+	protoc -I=services/account/api -I=third_party \
+		--go_out=services/account/internal/protogen/account \
 		--go_opt=paths=source_relative \
-		--go-grpc_out=services/account/internal/protogen/account/v1 \
+		--go-grpc_out=services/account/internal/protogen/account \
 		--go-grpc_opt=paths=source_relative \
-		--grpc-gateway_out=services/account/internal/protogen/account/v1 \
+		--grpc-gateway_out=services/account/internal/protogen/account \
 		--grpc-gateway_opt=paths=source_relative \
-		--openapiv2_out=services/account/api/v1 \
+		--openapiv2_out=services/account/api \
 		--openapiv2_opt=allow_merge=true,merge_file_name=account \
-		services/account/api/v1/*.proto
+		services/account/api/*.proto
+
+proto-transaction:
+	@echo "Generating transaction service protobuf..."
+	@mkdir -p services/transaction/internal/protogen/transaction
+	protoc -I=services/transaction/api -I=third_party \
+		--go_out=services/transaction/internal/protogen/transaction \
+		--go_opt=paths=source_relative \
+		--go-grpc_out=services/transaction/internal/protogen/transaction \
+		--go-grpc_opt=paths=source_relative \
+		--grpc-gateway_out=services/transaction/internal/protogen/transaction \
+		--grpc-gateway_opt=paths=source_relative \
+		--openapiv2_out=services/transaction/api \
+		--openapiv2_opt=allow_merge=true,merge_file_name=transaction \
+		services/transaction/api/*.proto

@@ -627,7 +627,7 @@ const file_account_proto_rawDesc = "" +
 	"\rUpdateAccount\x12 .account.v1.UpdateAccountRequest\x1a\x13.account.v1.Account\"2\x82\xd3\xe4\x93\x02,:\aaccount2!/v1/accounts/{account.account_id}\x12l\n" +
 	"\rDeleteAccount\x12 .account.v1.DeleteAccountRequest\x1a\x16.google.protobuf.Empty\"!\x82\xd3\xe4\x93\x02\x1b*\x19/v1/accounts/{account_id}\x12k\n" +
 	"\n" +
-	"GetBalance\x12\x1d.account.v1.GetBalanceRequest\x1a\x13.account.v1.Balance\")\x82\xd3\xe4\x93\x02#\x12!/v1/accounts/{account_id}/balanceBFZDgithub.com/mibrgmv/payment-service/services/account/api/v1;accountv1b\x06proto3"
+	"GetBalance\x12\x1d.account.v1.GetBalanceRequest\x1a\x13.account.v1.Balance\")\x82\xd3\xe4\x93\x02#\x12!/v1/accounts/{account_id}/balanceB\\ZZgithub.com/mibrgmv/payment-service/services/account/internal/protogen/account/v1;accountv1b\x06proto3"
 
 var (
 	file_account_proto_rawDescOnce sync.Once
