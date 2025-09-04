@@ -1,23 +1,21 @@
-package db
+package postgres
 
 import (
 	"context"
 	"fmt"
-	"time"
-
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewPostgresPool(ctx context.Context, connString string) (*pgxpool.Pool, error) {
-	config, err := pgxpool.ParseConfig(connString)
+func NewPostgresPool(ctx context.Context, cfg Config) (*pgxpool.Pool, error) {
+	config, err := pgxpool.ParseConfig(cfg.ConnString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse connection string: %w", err)
 	}
 
-	config.MaxConns = 10
-	config.MinConns = 2
-	config.MaxConnLifetime = time.Hour
-	config.MaxConnIdleTime = 30 * time.Minute
+	config.MaxConns = cfg.MaxConns
+	config.MinConns = cfg.MinConns
+	config.MaxConnLifetime = cfg.MaxConnLifetime
+	config.MaxConnIdleTime = cfg.MaxConnIdleTime
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {

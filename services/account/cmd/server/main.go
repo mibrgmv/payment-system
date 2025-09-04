@@ -6,26 +6,33 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/mibrgmv/payment-service/services/account/internal/db"
 	accountgrpc "github.com/mibrgmv/payment-service/services/account/internal/presentation/grpc"
 	accountv1 "github.com/mibrgmv/payment-service/services/account/internal/protogen/account"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
 	"github.com/mibrgmv/payment-service/services/account/internal/service"
+	"github.com/mibrgmv/payment-service/shared/db/postgres"
 )
 
 func main() {
 	ctx := context.Background()
 
-	pool, err := db.NewPostgresPool(ctx, "postgres://bill_clinton:2001@localhost:5432/account_service")
+	dbCfg := postgres.DefaultConfig("postgres://bill_clinton:2001@localhost:5432/account_service")
+	pool, err := postgres.NewPostgresPool(ctx, dbCfg)
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
 	defer pool.Close()
+
+	migrationPath := filepath.Join("migrations")
+	if err := postgres.RunMigrations(ctx, pool, migrationPath); err != nil {
+		log.Fatal("Failed to run migrations:", err)
+	}
 
 	accountRepo := repository.NewAccountRepository(pool)
 	balanceRepo := repository.NewBalanceRepository(pool)
