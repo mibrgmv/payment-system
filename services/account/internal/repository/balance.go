@@ -2,20 +2,12 @@ package repository
 
 import (
 	"context"
-	"time"
-
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/mibrgmv/payment-service/services/account/internal/models"
 )
 
 type BalanceRepository interface {
-	GetBalance(ctx context.Context, accountID string) (*Balance, error)
-}
-
-type Balance struct {
-	AccountID   string    `db:"account_id"`
-	Amount      float64   `db:"amount"`
-	Currency    string    `db:"currency"`
-	LastUpdated time.Time `db:"last_updated"`
+	GetBalance(ctx context.Context, accountID string) (*models.Balance, error)
 }
 
 type balanceRepo struct {
@@ -26,8 +18,8 @@ func NewBalanceRepository(db *pgxpool.Pool) BalanceRepository {
 	return &balanceRepo{db: db}
 }
 
-func (r *balanceRepo) GetBalance(ctx context.Context, accountID string) (*Balance, error) {
-	var balance Balance
+func (r *balanceRepo) GetBalance(ctx context.Context, accountID string) (*models.Balance, error) {
+	var balance models.Balance
 	err := r.db.QueryRow(ctx, `
 		SELECT b.account_id, b.amount, a.currency, b.last_updated 
 		FROM balances b

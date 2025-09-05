@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mibrgmv/payment-service/services/account/internal/models"
 	accountv1 "github.com/mibrgmv/payment-service/services/account/internal/protogen/account"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type AccountService struct {
@@ -22,7 +22,12 @@ func NewAccountService(accountRepo repository.AccountRepository, balanceRepo rep
 }
 
 func (s *AccountService) CreateAccount(ctx context.Context, req *accountv1.CreateAccountRequest) (*accountv1.Account, error) {
-	accountID, err := s.accountRepo.CreateAccount(ctx, req.UserId, req.Currency.String())
+	currency, err := models.CurrencyFromProto(req.Currency)
+	if err != nil {
+		return nil, fmt.Errorf("invalid currency: %w", err)
+	}
+
+	accountID, err := s.accountRepo.CreateAccount(ctx, req.UserId, currency)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create account: %w", err)
 	}
@@ -36,13 +41,7 @@ func (s *AccountService) GetAccount(ctx context.Context, req *accountv1.GetAccou
 		return nil, fmt.Errorf("failed to get account: %w", err)
 	}
 
-	return &accountv1.Account{
-		AccountId: account.AccountID,
-		UserId:    account.UserID,
-		Currency:  accountv1.Currency(accountv1.Currency_value[account.Currency]),
-		CreatedAt: timestamppb.New(account.CreatedAt),
-		UpdatedAt: timestamppb.New(account.UpdatedAt),
-	}, nil
+	return account.ToProto(), nil
 }
 
 func (s *AccountService) ListAccounts(ctx context.Context, req *accountv1.ListAccountsRequest) (*accountv1.ListAccountsResponse, error) {
@@ -59,13 +58,7 @@ func (s *AccountService) ListAccounts(ctx context.Context, req *accountv1.ListAc
 
 	pbAccounts := make([]*accountv1.Account, len(accounts))
 	for i, account := range accounts {
-		pbAccounts[i] = &accountv1.Account{
-			AccountId: account.AccountID,
-			UserId:    account.UserID,
-			Currency:  accountv1.Currency(accountv1.Currency_value[account.Currency]),
-			CreatedAt: timestamppb.New(account.CreatedAt),
-			UpdatedAt: timestamppb.New(account.UpdatedAt),
-		}
+		pbAccounts[i] = account.ToProto()
 	}
 
 	return &accountv1.ListAccountsResponse{
@@ -74,18 +67,14 @@ func (s *AccountService) ListAccounts(ctx context.Context, req *accountv1.ListAc
 }
 
 func (s *AccountService) UpdateAccount(ctx context.Context, req *accountv1.UpdateAccountRequest) (*accountv1.Account, error) {
-	// Validate field mask - only allow currency updates for now
-	if req.UpdateMask != nil {
-		for _, path := range req.UpdateMask.Paths {
-			if path != "currency" {
-				return nil, fmt.Errorf("field %s cannot be updated", path)
-			}
-		}
+	currency, err := models.CurrencyFromProto(req.Account.Currency)
+	if err != nil {
+		return nil, fmt.Errorf("invalid currency: %w", err)
 	}
 
-	account := &repository.Account{
+	account := &models.Account{
 		AccountID: req.Account.AccountId,
-		Currency:  req.Account.Currency.String(),
+		Currency:  currency,
 	}
 
 	if err := s.accountRepo.UpdateAccount(ctx, account); err != nil {
@@ -108,10 +97,5 @@ func (s *AccountService) GetBalance(ctx context.Context, req *accountv1.GetBalan
 		return nil, fmt.Errorf("failed to get balance: %w", err)
 	}
 
-	return &accountv1.Balance{
-		AccountId:   balance.AccountID,
-		Amount:      balance.Amount,
-		Currency:    accountv1.Currency(accountv1.Currency_value[balance.Currency]),
-		LastUpdated: timestamppb.New(balance.LastUpdated),
-	}, nil
+	return balance.ToProto(), nil
 }

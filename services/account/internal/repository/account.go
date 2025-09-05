@@ -3,10 +3,10 @@ package repository
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/mibrgmv/payment-service/services/account/internal/models"
 )
 
 var (
@@ -14,19 +14,11 @@ var (
 )
 
 type AccountRepository interface {
-	CreateAccount(ctx context.Context, userID string, currency string) (string, error)
-	GetAccount(ctx context.Context, accountID string) (*Account, error)
-	ListAccounts(ctx context.Context, userID string, limit, offset int) ([]*Account, error)
-	UpdateAccount(ctx context.Context, account *Account) error
+	CreateAccount(ctx context.Context, userID string, currency models.Currency) (string, error)
+	GetAccount(ctx context.Context, accountID string) (*models.Account, error)
+	ListAccounts(ctx context.Context, userID string, limit, offset int) ([]*models.Account, error)
+	UpdateAccount(ctx context.Context, account *models.Account) error
 	DeleteAccount(ctx context.Context, accountID string) error
-}
-
-type Account struct {
-	AccountID string    `db:"account_id"`
-	UserID    string    `db:"user_id"`
-	Currency  string    `db:"currency"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
 }
 
 type accountRepo struct {
@@ -37,28 +29,44 @@ func NewAccountRepository(db *pgxpool.Pool) AccountRepository {
 	return &accountRepo{db: db}
 }
 
-func (r *accountRepo) CreateAccount(ctx context.Context, userID string, currency string) (string, error) {
+func (r *accountRepo) CreateAccount(ctx context.Context, userID string, currency models.Currency) (string, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback(ctx)
+
 	var accountID string
-	err := r.db.QueryRow(ctx, `
+	err = tx.QueryRow(ctx, `
 		INSERT INTO accounts (user_id, currency) 
 		VALUES ($1, $2) 
 		RETURNING account_id
-	`, userID, currency).Scan(&accountID)
+	`, userID, currency.String()).Scan(&accountID)
 
 	if err != nil {
 		return "", err
 	}
 
-	_, err = r.db.Exec(ctx, `
+	_, err = tx.Exec(ctx, `
 		INSERT INTO balances (account_id, amount) 
 		VALUES ($1, 0)
 	`, accountID)
 
-	return accountID, err
+	if err != nil {
+		return "", err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return "", err
+	}
+
+	return accountID, nil
 }
 
-func (r *accountRepo) GetAccount(ctx context.Context, accountID string) (*Account, error) {
-	var account Account
+func (r *accountRepo) GetAccount(ctx context.Context, accountID string) (*models.Account, error) {
+	var account models.Account
+	var currencyStr string
+
 	err := r.db.QueryRow(ctx, `
 		SELECT account_id, user_id, currency, created_at, updated_at 
 		FROM accounts 
@@ -66,7 +74,7 @@ func (r *accountRepo) GetAccount(ctx context.Context, accountID string) (*Accoun
 	`, accountID).Scan(
 		&account.AccountID,
 		&account.UserID,
-		&account.Currency,
+		&currencyStr,
 		&account.CreatedAt,
 		&account.UpdatedAt,
 	)
@@ -74,11 +82,20 @@ func (r *accountRepo) GetAccount(ctx context.Context, accountID string) (*Accoun
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrAccountNotFound
 	}
+	if err != nil {
+		return nil, err
+	}
 
-	return &account, err
+	currency, err := models.CurrencyFromString(currencyStr)
+	if err != nil {
+		return nil, err
+	}
+	account.Currency = currency
+
+	return &account, nil
 }
 
-func (r *accountRepo) ListAccounts(ctx context.Context, userID string, limit, offset int) ([]*Account, error) {
+func (r *accountRepo) ListAccounts(ctx context.Context, userID string, limit, offset int) ([]*models.Account, error) {
 	rows, err := r.db.Query(ctx, `
 		SELECT account_id, user_id, currency, created_at, updated_at 
 		FROM accounts 
@@ -92,30 +109,45 @@ func (r *accountRepo) ListAccounts(ctx context.Context, userID string, limit, of
 	}
 	defer rows.Close()
 
-	var accounts []*Account
+	var accounts []*models.Account
 	for rows.Next() {
-		var account Account
+		var account models.Account
+		var currencyStr string
+
 		if err := rows.Scan(
 			&account.AccountID,
 			&account.UserID,
-			&account.Currency,
+			&currencyStr,
 			&account.CreatedAt,
 			&account.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
+
+		currency, err := models.CurrencyFromString(currencyStr)
+		if err != nil {
+			return nil, err
+		}
+		account.Currency = currency
+
 		accounts = append(accounts, &account)
 	}
 
 	return accounts, rows.Err()
 }
 
-func (r *accountRepo) UpdateAccount(ctx context.Context, account *Account) error {
-	result, err := r.db.Exec(ctx, `
+func (r *accountRepo) UpdateAccount(ctx context.Context, account *models.Account) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	result, err := tx.Exec(ctx, `
 		UPDATE accounts 
 		SET currency = $1, updated_at = now() 
 		WHERE account_id = $2
-	`, account.Currency, account.AccountID)
+	`, account.Currency.String(), account.AccountID)
 
 	if err != nil {
 		return err
@@ -125,15 +157,22 @@ func (r *accountRepo) UpdateAccount(ctx context.Context, account *Account) error
 		return ErrAccountNotFound
 	}
 
-	return nil
+	return tx.Commit(ctx)
 }
 
 func (r *accountRepo) DeleteAccount(ctx context.Context, accountID string) error {
-	result, err := r.db.Exec(ctx, `
-		DELETE FROM accounts 
-		WHERE account_id = $1
-	`, accountID)
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
 
+	_, err = tx.Exec(ctx, `DELETE FROM balances WHERE account_id = $1`, accountID)
+	if err != nil {
+		return err
+	}
+
+	result, err := tx.Exec(ctx, `DELETE FROM accounts WHERE account_id = $1`, accountID)
 	if err != nil {
 		return err
 	}
@@ -142,5 +181,5 @@ func (r *accountRepo) DeleteAccount(ctx context.Context, accountID string) error
 		return ErrAccountNotFound
 	}
 
-	return nil
+	return tx.Commit(ctx)
 }

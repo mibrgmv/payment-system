@@ -1,4 +1,5 @@
-create type currency_code as enum (
+create type currency_code as enum
+(
     'RUB',
     'USD',
     'EUR'
@@ -19,7 +20,7 @@ create table balances
 (
     account_id   uuid primary key references accounts (account_id),
     amount       decimal(19, 4) not null default 0 check (amount >= 0),
-    last_updated timestamptz    not null default now(),
+    last_updated timestamptz    not null default now()
 );
 
 create index idx_balances_amount on balances (amount);
