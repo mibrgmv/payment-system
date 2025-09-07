@@ -38,9 +38,9 @@ func (r *accountRepo) CreateAccount(ctx context.Context, userID string, currency
 
 	var accountID string
 	err = tx.QueryRow(ctx, `
-		INSERT INTO accounts (user_id, currency) 
-		VALUES ($1, $2) 
-		RETURNING account_id
+		insert into accounts (user_id, currency) 
+		values ($1, $2) 
+		returning account_id
 	`, userID, currency.String()).Scan(&accountID)
 
 	if err != nil {
@@ -48,8 +48,8 @@ func (r *accountRepo) CreateAccount(ctx context.Context, userID string, currency
 	}
 
 	_, err = tx.Exec(ctx, `
-		INSERT INTO balances (account_id, amount) 
-		VALUES ($1, 0)
+		insert into balances (account_id, amount) 
+		values ($1, 0)
 	`, accountID)
 
 	if err != nil {
@@ -68,9 +68,9 @@ func (r *accountRepo) GetAccount(ctx context.Context, accountID string) (*models
 	var currencyStr string
 
 	err := r.pool.QueryRow(ctx, `
-		SELECT account_id, user_id, currency, created_at, updated_at 
-		FROM accounts 
-		WHERE account_id = $1
+		select account_id, user_id, currency, created_at, updated_at 
+		from accounts 
+		where account_id = $1
 	`, accountID).Scan(
 		&account.AccountID,
 		&account.UserID,
@@ -105,15 +105,6 @@ func (r *accountRepo) ListAccounts(
 		return []*models.Account{}, "", nil
 	}
 
-	sql := `
-	select account_id, user_id, currency, created_at, updated_at 
-	from accounts 
-	where ((created_at, account_id) > ($1, $2) or ($1 is null and $2 is null))
-	  and (user_id = $3 or $3 is null) 
-	order by created_at asc, account_id asc
-	limit $4
-	`
-
 	var lastCreatedAt, lastAccountID, userIDparam interface{}
 	if pageToken != "" {
 		var decodeErr error
@@ -127,7 +118,15 @@ func (r *accountRepo) ListAccounts(
 		userIDparam = userID
 	}
 
-	rows, err := r.pool.Query(ctx, sql, lastCreatedAt, lastAccountID, userIDparam, pageSize+1)
+	rows, err := r.pool.Query(ctx, `
+		select account_id, user_id, currency, created_at, updated_at 
+		from accounts 
+		where ((created_at, account_id) > ($1, $2) or ($1 is null and $2 is null))
+		  and (user_id = $3 or $3 is null) 
+		order by created_at asc, account_id asc
+		limit $4
+	`, lastCreatedAt, lastAccountID, userIDparam, pageSize+1)
+
 	if err != nil {
 		return nil, "", err
 	}
@@ -178,9 +177,9 @@ func (r *accountRepo) UpdateAccount(ctx context.Context, account *models.Account
 	defer tx.Rollback(ctx)
 
 	result, err := tx.Exec(ctx, `
-		UPDATE accounts 
-		SET currency = $1, updated_at = now() 
-		WHERE account_id = $2
+		update accounts 
+		set currency = $1, updated_at = now() 
+		where account_id = $2
 	`, account.Currency.String(), account.AccountID)
 
 	if err != nil {
@@ -201,12 +200,12 @@ func (r *accountRepo) DeleteAccount(ctx context.Context, accountID string) error
 	}
 	defer tx.Rollback(ctx)
 
-	_, err = tx.Exec(ctx, `DELETE FROM balances WHERE account_id = $1`, accountID)
+	_, err = tx.Exec(ctx, `delete from balances where account_id = $1`, accountID)
 	if err != nil {
 		return err
 	}
 
-	result, err := tx.Exec(ctx, `DELETE FROM accounts WHERE account_id = $1`, accountID)
+	result, err := tx.Exec(ctx, `delete from accounts where account_id = $1`, accountID)
 	if err != nil {
 		return err
 	}
