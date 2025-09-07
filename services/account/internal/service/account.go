@@ -45,13 +45,7 @@ func (s *AccountService) GetAccount(ctx context.Context, req *accountv1.GetAccou
 }
 
 func (s *AccountService) ListAccounts(ctx context.Context, req *accountv1.ListAccountsRequest) (*accountv1.ListAccountsResponse, error) {
-	limit := int(req.PageSize)
-	if limit == 0 {
-		limit = 50
-	}
-	offset := 0
-
-	accounts, err := s.accountRepo.ListAccounts(ctx, req.UserId, limit, offset)
+	accounts, nextPageToken, err := s.accountRepo.ListAccounts(ctx, req.UserId, req.PageSize, req.PageToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list accounts: %w", err)
 	}
@@ -62,7 +56,8 @@ func (s *AccountService) ListAccounts(ctx context.Context, req *accountv1.ListAc
 	}
 
 	return &accountv1.ListAccountsResponse{
-		Accounts: pbAccounts,
+		Accounts:      pbAccounts,
+		NextPageToken: nextPageToken,
 	}, nil
 }
 
