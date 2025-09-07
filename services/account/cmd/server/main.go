@@ -3,8 +3,7 @@ package main
 import (
 	"context"
 	"github.com/mibrgmv/payment-service/services/account/internal/config"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	"github.com/mibrgmv/payment-service/services/account/internal/server"
 	"log"
 	"net"
 	"os"
@@ -12,15 +11,12 @@ import (
 	"path/filepath"
 	"syscall"
 
-	accountgrpc "github.com/mibrgmv/payment-service/services/account/internal/presentation/grpc"
-	accountv1 "github.com/mibrgmv/payment-service/services/account/internal/protogen/account"
-	"github.com/mibrgmv/payment-service/services/account/internal/repository"
-	"github.com/mibrgmv/payment-service/services/account/internal/service"
 	"github.com/mibrgmv/payment-service/shared/postgres"
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	var cfg config.Config
 	err := config.Load(&cfg)
@@ -35,21 +31,13 @@ func main() {
 	defer pool.Close()
 
 	migrationPath := filepath.Join("migrations")
-	if err := postgres.RunMigrations(ctx, pool, migrationPath); err != nil {
+	if err := postgres.MigrateUp(pool, migrationPath); err != nil {
 		log.Fatal("Failed to run migrations:", err)
 	}
 
-	accountRepo := repository.NewAccountRepository(pool)
-	balanceRepo := repository.NewBalanceRepository(pool)
+	s := server.NewGrpcServer(pool)
 
-	accountService := service.NewAccountService(accountRepo, balanceRepo)
-
-	grpcServer := accountgrpc.NewAccountServiceServer(accountService)
-	server := grpc.NewServer()
-	accountv1.RegisterAccountServiceServer(server, grpcServer)
-	reflection.Register(server)
-
-	lis, err := net.Listen("tcp", ":50051")
+	lis, err := net.Listen("tcp", cfg.Server.GetAddr())
 	if err != nil {
 		log.Fatal("Failed to listen:", err)
 	}
@@ -58,13 +46,13 @@ func main() {
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		log.Println("gRPC server starting on :50051")
-		if err := server.Serve(lis); err != nil {
+		log.Printf("gRPC server starting on %s", cfg.Server.GetAddr())
+		if err := s.Serve(lis); err != nil {
 			log.Fatal("Failed to serve gRPC:", err)
 		}
 	}()
 
 	sig := <-sigCh
 	log.Printf("gRPC server shutting down. received signal: %v", sig)
-	server.GracefulStop()
+	s.GracefulStop()
 }

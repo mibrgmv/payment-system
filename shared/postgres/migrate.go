@@ -1,7 +1,6 @@
 package postgres
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -11,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 )
 
-func RunMigrations(ctx context.Context, pool *pgxpool.Pool, migrationPath string) error {
+func MigrateUp(pool *pgxpool.Pool, migrationPath string) error {
 	sqlDB := stdlib.OpenDBFromPool(pool)
 	defer sqlDB.Close()
 

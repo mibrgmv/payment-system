@@ -4,12 +4,14 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/mibrgmv/payment-service/shared/env"
 	"github.com/mibrgmv/payment-service/shared/postgres"
+	"github.com/mibrgmv/payment-service/shared/server"
 	"github.com/mibrgmv/payment-service/shared/yaml"
 	"log"
 	"path/filepath"
 )
 
 type Config struct {
+	Server   server.Config   `yaml:"server"`
 	Postgres postgres.Config `yaml:"postgres"`
 }
 
