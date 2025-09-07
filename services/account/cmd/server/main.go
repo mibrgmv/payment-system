@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"github.com/mibrgmv/payment-service/services/account/internal/config"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
 	"os"
@@ -9,21 +12,23 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-
 	accountgrpc "github.com/mibrgmv/payment-service/services/account/internal/presentation/grpc"
 	accountv1 "github.com/mibrgmv/payment-service/services/account/internal/protogen/account"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
 	"github.com/mibrgmv/payment-service/services/account/internal/service"
-	"github.com/mibrgmv/payment-service/shared/db/postgres"
+	"github.com/mibrgmv/payment-service/shared/postgres"
 )
 
 func main() {
 	ctx := context.Background()
 
-	dbCfg := postgres.DefaultConfig("postgres://bill_clinton:2001@localhost:5432/account_service")
-	pool, err := postgres.NewPostgresPool(ctx, dbCfg)
+	var cfg config.Config
+	err := config.Load(&cfg)
+	if err != nil {
+		log.Fatal("Failed to load config:", err)
+	}
+
+	pool, err := postgres.NewPostgresPool(ctx, cfg.Postgres)
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
