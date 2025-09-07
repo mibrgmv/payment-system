@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mibrgmv/payment-service/services/account/internal/models"
 	accountv1 "github.com/mibrgmv/payment-service/services/account/internal/protogen/account"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
+	"github.com/mibrgmv/payment-service/services/account/internal/service/models"
 )
 
 type AccountService struct {

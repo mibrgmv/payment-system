@@ -6,7 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/mibrgmv/payment-service/services/account/internal/models"
+	"github.com/mibrgmv/payment-service/services/account/internal/service/models"
 )
 
 var (

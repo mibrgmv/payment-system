@@ -7,7 +7,7 @@ import (
 )
 
 func NewPostgresPool(ctx context.Context, cfg Config) (*pgxpool.Pool, error) {
-	config, err := pgxpool.ParseConfig(cfg.ConnString)
+	config, err := pgxpool.ParseConfig(cfg.ConnectionString())
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse connection string: %w", err)
 	}
