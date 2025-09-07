@@ -2,15 +2,11 @@ package repository
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mibrgmv/payment-service/services/account/internal/service/models"
-	"strings"
-	"time"
 )
 
 var (
@@ -112,24 +108,26 @@ func (r *accountRepo) ListAccounts(
 	sql := `
 	select account_id, user_id, currency, created_at, updated_at 
 	from accounts 
-	where (created_at, account_id) > ($1, $2)
-	  and ($3 = '' or user_id = $3::uuid) 
+	where ((created_at, account_id) > ($1, $2) or ($1 is null and $2 is null))
+	  and (user_id = $3 or $3 is null) 
 	order by created_at asc, account_id asc
 	limit $4
 	`
 
-	lastCreatedAt := time.Time{}
-	lastAccountID := uuid.Nil
-
+	var lastCreatedAt, lastAccountID, userIDparam interface{}
 	if pageToken != "" {
 		var decodeErr error
-		lastCreatedAt, lastAccountID, decodeErr = decodePageToken(pageToken)
+		lastCreatedAt, lastAccountID, decodeErr = DecodePageToken(pageToken)
 		if decodeErr != nil {
 			return nil, "", fmt.Errorf("invalid page token: %w", decodeErr)
 		}
 	}
 
-	rows, err := r.pool.Query(ctx, sql, lastCreatedAt, lastAccountID, userID, pageSize+1)
+	if userID != "" {
+		userIDparam = userID
+	}
+
+	rows, err := r.pool.Query(ctx, sql, lastCreatedAt, lastAccountID, userIDparam, pageSize+1)
 	if err != nil {
 		return nil, "", err
 	}
@@ -163,7 +161,10 @@ func (r *accountRepo) ListAccounts(
 	if len(accounts) > int(pageSize) {
 		accounts = accounts[:pageSize]
 		lastAccount := accounts[len(accounts)-1]
-		nextPageToken = encodePageToken(lastAccount.CreatedAt, lastAccount.AccountID)
+		nextPageToken, err = EncodePageToken(lastAccount.CreatedAt, lastAccount.AccountID)
+		if err != nil {
+			return nil, "", fmt.Errorf("failed to encode page token: %w", err)
+		}
 	}
 
 	return accounts, nextPageToken, nil
@@ -215,33 +216,4 @@ func (r *accountRepo) DeleteAccount(ctx context.Context, accountID string) error
 	}
 
 	return tx.Commit(ctx)
-}
-
-func encodePageToken(createdAt time.Time, accountID string) string {
-	data := fmt.Sprintf("%s|%s", createdAt.Format(time.RFC3339Nano), accountID)
-	return base64.StdEncoding.EncodeToString([]byte(data))
-}
-
-func decodePageToken(token string) (time.Time, uuid.UUID, error) {
-	decoded, err := base64.StdEncoding.DecodeString(token)
-	if err != nil {
-		return time.Time{}, uuid.Nil, err
-	}
-
-	parts := strings.Split(string(decoded), "|")
-	if len(parts) != 2 {
-		return time.Time{}, uuid.Nil, fmt.Errorf("invalid token format")
-	}
-
-	createdAt, err := time.Parse(time.RFC3339Nano, parts[0])
-	if err != nil {
-		return time.Time{}, uuid.Nil, err
-	}
-
-	accountId, err := uuid.Parse(parts[1])
-	if err != nil {
-		return time.Time{}, uuid.Nil, err
-	}
-
-	return createdAt, accountId, nil
 }
