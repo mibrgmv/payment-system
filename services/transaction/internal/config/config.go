@@ -3,21 +3,21 @@ package config
 import (
 	"github.com/joho/godotenv"
 	"github.com/mibrgmv/payment-service/shared/env"
+	"github.com/mibrgmv/payment-service/shared/loader"
 	"github.com/mibrgmv/payment-service/shared/postgres"
 	"github.com/mibrgmv/payment-service/shared/server"
-	"github.com/mibrgmv/payment-service/shared/yaml"
 	"log"
 	"path/filepath"
 )
 
 type Config struct {
-	Server   server.Config   `yaml:"server"`
-	Postgres postgres.Config `yaml:"postgres"`
+	Server   server.Config   `json:"server"`
+	Postgres postgres.Config `json:"postgres"`
 }
 
 func Load(config *Config) error {
-	yamlPath := filepath.Join("internal", "config", "config.json")
-	if err := yaml.Load(config, yamlPath); err != nil {
+	jsonPath := filepath.Join("internal", "config", "config.json")
+	if err := loader.Load(config, jsonPath); err != nil {
 		return err
 	}
 

@@ -3,7 +3,6 @@ module github.com/mibrgmv/payment-service/services/account
 go 1.24.0
 
 require (
-	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/joho/godotenv v1.5.1
@@ -14,6 +13,7 @@ require (
 )
 
 require (
+	github.com/goccy/go-json v0.9.11 // indirect
 	github.com/golang-migrate/migrate/v4 v4.19.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
