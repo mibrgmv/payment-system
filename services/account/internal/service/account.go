@@ -14,6 +14,7 @@ var (
 	ErrBalanceNotFound   = repository.ErrBalanceNotFound
 	ErrUserIDRequired    = errors.New("user ID is required")
 	ErrAccountIDRequired = errors.New("account ID is required")
+	ErrInvalidPageSize   = errors.New("page size cannot be negative")
 )
 
 type AccountService interface {
@@ -65,7 +66,7 @@ func (s *accountService) GetAccount(ctx context.Context, accountID string) (*mod
 
 func (s *accountService) ListAccounts(ctx context.Context, userID string, pageSize int32, pageToken string) ([]*models.Account, string, error) {
 	if pageSize < 0 {
-		return nil, "", fmt.Errorf("page size cannot be negative")
+		return nil, "", ErrInvalidPageSize
 	}
 
 	accounts, nextPageToken, err := s.accountRepo.ListAccounts(ctx, userID, pageSize, pageToken)

@@ -56,6 +56,9 @@ func (s *accountServer) GetAccount(ctx context.Context, req *accountv1.GetAccoun
 func (s *accountServer) ListAccounts(ctx context.Context, req *accountv1.ListAccountsRequest) (*accountv1.ListAccountsResponse, error) {
 	accounts, nextPageToken, err := s.service.ListAccounts(ctx, req.UserId, req.PageSize, req.PageToken)
 	if err != nil {
+		if errors.Is(err, service.ErrInvalidPageSize) {
+			return nil, status.Error(codes.InvalidArgument, "page size cannot be negative")
+		}
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to list accounts: %v", err))
 	}
 
