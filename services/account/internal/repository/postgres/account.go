@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
 	"github.com/mibrgmv/payment-service/services/account/internal/service/models"
+	"github.com/mibrgmv/payment-service/shared/pagination"
 )
 
 type accountRepo struct {
@@ -97,7 +98,7 @@ func (r *accountRepo) ListAccounts(
 	var lastCreatedAt, lastAccountID, userIDparam interface{}
 	if pageToken != "" {
 		var decodeErr error
-		lastCreatedAt, lastAccountID, decodeErr = repository.DecodePageToken(pageToken)
+		lastCreatedAt, lastAccountID, decodeErr = pagination.DecodePageToken(pageToken)
 		if decodeErr != nil {
 			return nil, "", fmt.Errorf("invalid page token: %w", decodeErr)
 		}
@@ -149,7 +150,7 @@ func (r *accountRepo) ListAccounts(
 	if len(accounts) > int(pageSize) {
 		accounts = accounts[:pageSize]
 		lastAccount := accounts[len(accounts)-1]
-		nextPageToken, err = repository.EncodePageToken(lastAccount.CreatedAt, lastAccount.AccountID)
+		nextPageToken, err = pagination.EncodePageToken(lastAccount.CreatedAt, lastAccount.AccountID)
 		if err != nil {
 			return nil, "", fmt.Errorf("failed to encode page token: %w", err)
 		}

@@ -1,4 +1,4 @@
-package repository
+package pagination
 
 import (
 	"encoding/base64"
