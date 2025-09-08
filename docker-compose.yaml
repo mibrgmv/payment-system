@@ -10,6 +10,8 @@ services:
     restart: unless-stopped
     volumes:
       - account-postgres-data:/var/lib/postgresql/data
+    networks:
+      - account-network
 
   transaction-postgres:
     image: postgres:latest
@@ -22,19 +24,27 @@ services:
     restart: unless-stopped
     volumes:
       - transaction-postgres-data:/var/lib/postgresql/data
+    networks:
+      - transaction-network
 
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-    volumes:
-      - redis-data:/var/lib/redis/data
+#  redis:
+#    image: redis:latest
+#    ports:
+#      - "6379:6379"
+#    restart: unless-stopped
+#    command: redis-server --requirepass ${REDIS_PASSWORD}
+#    environment:
+#      - REDIS_PASSWORD=${REDIS_PASSWORD}
+#    volumes:
+#      - redis-data:/var/lib/redis/data
 
 volumes:
   account-postgres-data:
   transaction-postgres-data:
-  redis-data:
+#  redis-data:
+
+networks:
+  account-network:
+    driver: bridge
+  transaction-network:
+    driver: bridge
