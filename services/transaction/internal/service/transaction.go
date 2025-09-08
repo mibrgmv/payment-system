@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"time"
 
 	"github.com/mibrgmv/payment-service/services/transaction/internal/repository"
@@ -42,12 +43,18 @@ func (s *transactionService) CreateTransfer(
 	currency models.Currency,
 	idempotencyKey string,
 ) (*models.Transaction, error) {
-	if err := validateTransfer(fromAccountID, toAccountID, amount, currency); err != nil {
-		return nil, err
+	if fromAccountID == "" || toAccountID == "" {
+		return nil, fmt.Errorf("%w: both accounts must be specified", ErrInvalidTransaction)
+	}
+	if fromAccountID == toAccountID {
+		return nil, fmt.Errorf("%w: cannot transfer to same account", ErrInvalidTransaction)
+	}
+	if amount <= 0 {
+		return nil, fmt.Errorf("%w: amount must be positive", ErrInvalidTransaction)
 	}
 
 	transaction := &models.Transaction{
-		TransactionID:  generateUUID(),
+		TransactionID:  uuid.New().String(),
 		Type:           models.TransactionTypeTransfer,
 		FromAccountID:  &fromAccountID,
 		ToAccountID:    &toAccountID,
@@ -73,12 +80,15 @@ func (s *transactionService) CreateDeposit(
 	currency models.Currency,
 	idempotencyKey string,
 ) (*models.Transaction, error) {
-	if err := validateDeposit(toAccountID, amount, currency); err != nil {
-		return nil, err
+	if toAccountID == "" {
+		return nil, fmt.Errorf("%w: to account must be specified", ErrInvalidTransaction)
+	}
+	if amount <= 0 {
+		return nil, fmt.Errorf("%w: amount must be positive", ErrInvalidTransaction)
 	}
 
 	transaction := &models.Transaction{
-		TransactionID:  generateUUID(),
+		TransactionID:  uuid.New().String(),
 		Type:           models.TransactionTypeDeposit,
 		ToAccountID:    &toAccountID,
 		Amount:         amount,
@@ -103,12 +113,15 @@ func (s *transactionService) CreateWithdrawal(
 	currency models.Currency,
 	idempotencyKey string,
 ) (*models.Transaction, error) {
-	if err := validateWithdrawal(fromAccountID, amount, currency); err != nil {
-		return nil, err
+	if fromAccountID == "" {
+		return nil, fmt.Errorf("%w: from account must be specified", ErrInvalidTransaction)
+	}
+	if amount <= 0 {
+		return nil, fmt.Errorf("%w: amount must be positive", ErrInvalidTransaction)
 	}
 
 	transaction := &models.Transaction{
-		TransactionID:  generateUUID(),
+		TransactionID:  uuid.New().String(),
 		Type:           models.TransactionTypeWithdrawal,
 		FromAccountID:  &fromAccountID,
 		Amount:         amount,
@@ -143,51 +156,4 @@ func (s *transactionService) CancelTransaction(ctx context.Context, transactionI
 
 func (s *transactionService) GetTransactionStatus(ctx context.Context, transactionID string) (*models.Transaction, error) {
 	return s.repo.GetTransaction(ctx, transactionID)
-}
-
-func validateTransfer(fromAccountID, toAccountID string, amount float64, currency models.Currency) error {
-	if fromAccountID == "" || toAccountID == "" {
-		return fmt.Errorf("%w: both accounts must be specified", ErrInvalidTransaction)
-	}
-	if fromAccountID == toAccountID {
-		return fmt.Errorf("%w: cannot transfer to same account", ErrInvalidTransaction)
-	}
-	if amount <= 0 {
-		return fmt.Errorf("%w: amount must be positive", ErrInvalidTransaction)
-	}
-	if currency == models.CurrencyUnspecified {
-		return fmt.Errorf("%w: currency must be specified", ErrInvalidTransaction)
-	}
-	return nil
-}
-
-func validateDeposit(toAccountID string, amount float64, currency models.Currency) error {
-	if toAccountID == "" {
-		return fmt.Errorf("%w: to account must be specified", ErrInvalidTransaction)
-	}
-	if amount <= 0 {
-		return fmt.Errorf("%w: amount must be positive", ErrInvalidTransaction)
-	}
-	if currency == models.CurrencyUnspecified {
-		return fmt.Errorf("%w: currency must be specified", ErrInvalidTransaction)
-	}
-	return nil
-}
-
-func validateWithdrawal(fromAccountID string, amount float64, currency models.Currency) error {
-	if fromAccountID == "" {
-		return fmt.Errorf("%w: from account must be specified", ErrInvalidTransaction)
-	}
-	if amount <= 0 {
-		return fmt.Errorf("%w: amount must be positive", ErrInvalidTransaction)
-	}
-	if currency == models.CurrencyUnspecified {
-		return fmt.Errorf("%w: currency must be specified", ErrInvalidTransaction)
-	}
-	return nil
-}
-
-func generateUUID() string {
-	// Implementation for UUID generation
-	return "generated-uuid" // Replace with actual UUID generation
 }
