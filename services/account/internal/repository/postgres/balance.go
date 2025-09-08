@@ -2,6 +2,9 @@ package postgres
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
 	"github.com/mibrgmv/payment-service/services/account/internal/service/models"
@@ -17,6 +20,8 @@ func NewBalanceRepository(db *pgxpool.Pool) repository.BalanceRepository {
 
 func (r *balanceRepo) GetBalance(ctx context.Context, accountID string) (*models.Balance, error) {
 	var balance models.Balance
+	var currencyStr string
+
 	err := r.db.QueryRow(ctx, `
 		select b.account_id, b.amount, a.currency, b.last_updated 
 		from balances b
@@ -25,13 +30,22 @@ func (r *balanceRepo) GetBalance(ctx context.Context, accountID string) (*models
 	`, accountID).Scan(
 		&balance.AccountID,
 		&balance.Amount,
-		&balance.Currency,
+		&currencyStr,
 		&balance.LastUpdated,
 	)
 
-	if err != nil {
-		return nil, err
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, repository.ErrBalanceNotFound
 	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get balance: %w", err)
+	}
+
+	currency, err := models.CurrencyFromString(currencyStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid currency in database: %w", err)
+	}
+	balance.Currency = currency
 
 	return &balance, nil
 }

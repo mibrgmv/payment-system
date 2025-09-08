@@ -8,10 +8,9 @@ import (
 type Currency string
 
 const (
-	CurrencyUnspecified Currency = "unspecified"
-	CurrencyRUB         Currency = "RUB"
-	CurrencyUSD         Currency = "USD"
-	CurrencyEUR         Currency = "EUR"
+	CurrencyRUB Currency = "RUB"
+	CurrencyUSD Currency = "USD"
+	CurrencyEUR Currency = "EUR"
 )
 
 func (c Currency) String() string {
@@ -26,10 +25,8 @@ func CurrencyFromString(s string) (Currency, error) {
 		return CurrencyUSD, nil
 	case "EUR":
 		return CurrencyEUR, nil
-	case "unspecified":
-		return CurrencyUnspecified, nil
 	default:
-		return CurrencyUnspecified, fmt.Errorf("invalid currency: %s", s)
+		return "", fmt.Errorf("invalid currency: %s", s)
 	}
 }
 
@@ -55,8 +52,8 @@ func CurrencyFromProto(pb transactionv1.Currency) (Currency, error) {
 	case transactionv1.Currency_CURRENCY_EUR:
 		return CurrencyEUR, nil
 	case transactionv1.Currency_CURRENCY_UNSPECIFIED:
-		return CurrencyUnspecified, nil
+		return "", fmt.Errorf("currency must be specified")
 	default:
-		return CurrencyUnspecified, fmt.Errorf("invalid proto currency: %v", pb)
+		return "", fmt.Errorf("unknown currency value: %v", pb)
 	}
 }

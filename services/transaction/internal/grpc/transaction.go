@@ -14,16 +14,16 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type TransactionServer struct {
+type transactionServer struct {
 	transactionv1.UnimplementedTransactionServiceServer
 	service service.TransactionService
 }
 
-func NewTransactionServer(service service.TransactionService) *TransactionServer {
-	return &TransactionServer{service: service}
+func NewTransactionServer(service service.TransactionService) transactionv1.TransactionServiceServer {
+	return &transactionServer{service: service}
 }
 
-func (s *TransactionServer) CreateTransfer(ctx context.Context, req *transactionv1.CreateTransferRequest) (*transactionv1.Transaction, error) {
+func (s *transactionServer) CreateTransfer(ctx context.Context, req *transactionv1.CreateTransferRequest) (*transactionv1.Transaction, error) {
 	currency, err := models.CurrencyFromProto(req.Currency)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid currency: %v", err))
@@ -44,7 +44,7 @@ func (s *TransactionServer) CreateTransfer(ctx context.Context, req *transaction
 	return transaction.ToProto(), nil
 }
 
-func (s *TransactionServer) CreateDeposit(ctx context.Context, req *transactionv1.CreateDepositRequest) (*transactionv1.Transaction, error) {
+func (s *transactionServer) CreateDeposit(ctx context.Context, req *transactionv1.CreateDepositRequest) (*transactionv1.Transaction, error) {
 	currency, err := models.CurrencyFromProto(req.Currency)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid currency: %v", err))
@@ -64,7 +64,7 @@ func (s *TransactionServer) CreateDeposit(ctx context.Context, req *transactionv
 	return transaction.ToProto(), nil
 }
 
-func (s *TransactionServer) CreateWithdrawal(ctx context.Context, req *transactionv1.CreateWithdrawalRequest) (*transactionv1.Transaction, error) {
+func (s *transactionServer) CreateWithdrawal(ctx context.Context, req *transactionv1.CreateWithdrawalRequest) (*transactionv1.Transaction, error) {
 	currency, err := models.CurrencyFromProto(req.Currency)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid currency: %v", err))
@@ -84,7 +84,7 @@ func (s *TransactionServer) CreateWithdrawal(ctx context.Context, req *transacti
 	return transaction.ToProto(), nil
 }
 
-func (s *TransactionServer) GetTransaction(ctx context.Context, req *transactionv1.GetTransactionRequest) (*transactionv1.Transaction, error) {
+func (s *transactionServer) GetTransaction(ctx context.Context, req *transactionv1.GetTransactionRequest) (*transactionv1.Transaction, error) {
 	transaction, err := s.service.GetTransaction(ctx, req.TransactionId)
 	if err != nil {
 		if errors.Is(err, repository.ErrTransactionNotFound) {
@@ -96,7 +96,7 @@ func (s *TransactionServer) GetTransaction(ctx context.Context, req *transaction
 	return transaction.ToProto(), nil
 }
 
-func (s *TransactionServer) ListTransactions(ctx context.Context, req *transactionv1.ListTransactionsRequest) (*transactionv1.ListTransactionsResponse, error) {
+func (s *transactionServer) ListTransactions(ctx context.Context, req *transactionv1.ListTransactionsRequest) (*transactionv1.ListTransactionsResponse, error) {
 	filters := models.TransactionFilters{
 		AccountIDs: req.AccountIds,
 		FromDate:   req.FromDate.AsTime(),
@@ -140,7 +140,7 @@ func (s *TransactionServer) ListTransactions(ctx context.Context, req *transacti
 	}, nil
 }
 
-func (s *TransactionServer) CancelTransaction(ctx context.Context, req *transactionv1.CancelTransactionRequest) (*transactionv1.Transaction, error) {
+func (s *transactionServer) CancelTransaction(ctx context.Context, req *transactionv1.CancelTransactionRequest) (*transactionv1.Transaction, error) {
 	transaction, err := s.service.CancelTransaction(ctx, req.TransactionId)
 	if err != nil {
 		if errors.Is(err, repository.ErrTransactionNotFound) {
@@ -152,7 +152,7 @@ func (s *TransactionServer) CancelTransaction(ctx context.Context, req *transact
 	return transaction.ToProto(), nil
 }
 
-func (s *TransactionServer) GetTransactionStatus(ctx context.Context, req *transactionv1.GetTransactionStatusRequest) (*transactionv1.TransactionStatusResponse, error) {
+func (s *transactionServer) GetTransactionStatus(ctx context.Context, req *transactionv1.GetTransactionStatusRequest) (*transactionv1.TransactionStatusResponse, error) {
 	transaction, err := s.service.GetTransactionStatus(ctx, req.TransactionId)
 	if err != nil {
 		if errors.Is(err, repository.ErrTransactionNotFound) {
