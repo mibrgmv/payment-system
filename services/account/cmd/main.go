@@ -30,7 +30,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	migrationPath := filepath.Join("migrations")
+	migrationPath := filepath.Join("internal", "migrations")
 	if err := postgres.MigrateUp(pool, migrationPath); err != nil {
 		log.Fatal("Failed to run migrations:", err)
 	}

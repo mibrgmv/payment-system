@@ -44,7 +44,7 @@ create table transactions
     constraint valid_account_combination check (
         from_account_id is distinct from to_account_id or
         (from_account_id is null and to_account_id is null)
-    ),
+    )
 );
 
 create index idx_transactions_status on transactions (status);
