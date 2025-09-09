@@ -1,8 +1,8 @@
 package loader
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/goccy/go-json"
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
