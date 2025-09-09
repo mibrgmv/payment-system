@@ -15,9 +15,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-//go:embed gateway.swagger.json
-var swaggerJSON []byte
-
 func NewHttpServer(ctx context.Context, config config.Config) (*http.Server, error) {
 	gwmux := runtime.NewServeMux()
 
@@ -44,7 +41,7 @@ func NewHttpServer(ctx context.Context, config config.Config) (*http.Server, err
 
 	mux.HandleFunc("/swagger.json", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(swaggerJSON)
+		http.ServeFile(w, r, "./api/gateway.swagger.json")
 	})
 
 	mux.Handle("/swagger/", httpSwagger.Handler(
