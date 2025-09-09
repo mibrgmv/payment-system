@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/mibrgmv/payment-service/services/account/internal/config"
-	"github.com/mibrgmv/payment-service/services/account/internal/server"
 	"log"
 	"net"
 	"os"
@@ -11,6 +9,8 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/mibrgmv/payment-service/services/account/internal/config"
+	"github.com/mibrgmv/payment-service/services/account/internal/server"
 	"github.com/mibrgmv/payment-service/shared/postgres"
 )
 
