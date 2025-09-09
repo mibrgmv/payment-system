@@ -1,0 +1,796 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "account.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "AccountService"
+    },
+    {
+      "name": "TransactionService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/accounts": {
+      "get": {
+        "operationId": "AccountService_ListAccounts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListAccountsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AccountService"
+        ]
+      },
+      "post": {
+        "operationId": "AccountService_CreateAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Account"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateAccountRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AccountService"
+        ]
+      }
+    },
+    "/v1/accounts/{account.accountId}": {
+      "patch": {
+        "operationId": "AccountService_UpdateAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Account"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "account.accountId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "account",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "userId": {
+                  "type": "string"
+                },
+                "currency": {
+                  "$ref": "#/definitions/accountv1Currency"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "AccountService"
+        ]
+      }
+    },
+    "/v1/accounts/{accountId}": {
+      "get": {
+        "operationId": "AccountService_GetAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Account"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AccountService"
+        ]
+      },
+      "delete": {
+        "operationId": "AccountService_DeleteAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AccountService"
+        ]
+      }
+    },
+    "/v1/accounts/{accountId}/balance": {
+      "get": {
+        "operationId": "AccountService_GetBalance",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Balance"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AccountService"
+        ]
+      }
+    },
+    "/v1/deposits": {
+      "post": {
+        "operationId": "TransactionService_CreateDeposit",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Transaction"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateDepositRequest"
+            }
+          }
+        ],
+        "tags": [
+          "TransactionService"
+        ]
+      }
+    },
+    "/v1/transactions": {
+      "get": {
+        "operationId": "TransactionService_ListTransactions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListTransactionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "accountIds",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "TRANSACTION_TYPE_UNSPECIFIED",
+              "TRANSACTION_TYPE_TRANSFER",
+              "TRANSACTION_TYPE_DEPOSIT",
+              "TRANSACTION_TYPE_WITHDRAWAL"
+            ],
+            "default": "TRANSACTION_TYPE_UNSPECIFIED"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "TRANSACTION_STATUS_UNSPECIFIED",
+              "TRANSACTION_STATUS_PENDING",
+              "TRANSACTION_STATUS_PROCESSING",
+              "TRANSACTION_STATUS_COMPLETED",
+              "TRANSACTION_STATUS_FAILED",
+              "TRANSACTION_STATUS_CANCELLED"
+            ],
+            "default": "TRANSACTION_STATUS_UNSPECIFIED"
+          },
+          {
+            "name": "fromDate",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "toDate",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TransactionService"
+        ]
+      }
+    },
+    "/v1/transactions/{transactionId}": {
+      "get": {
+        "operationId": "TransactionService_GetTransaction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Transaction"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "transactionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TransactionService"
+        ]
+      }
+    },
+    "/v1/transactions/{transactionId}/status": {
+      "get": {
+        "operationId": "TransactionService_GetTransactionStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TransactionStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "transactionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TransactionService"
+        ]
+      }
+    },
+    "/v1/transactions/{transactionId}:cancel": {
+      "post": {
+        "operationId": "TransactionService_CancelTransaction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Transaction"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "transactionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TransactionServiceCancelTransactionBody"
+            }
+          }
+        ],
+        "tags": [
+          "TransactionService"
+        ]
+      }
+    },
+    "/v1/transfers": {
+      "post": {
+        "operationId": "TransactionService_CreateTransfer",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Transaction"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateTransferRequest"
+            }
+          }
+        ],
+        "tags": [
+          "TransactionService"
+        ]
+      }
+    },
+    "/v1/withdrawals": {
+      "post": {
+        "operationId": "TransactionService_CreateWithdrawal",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Transaction"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateWithdrawalRequest"
+            }
+          }
+        ],
+        "tags": [
+          "TransactionService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "TransactionServiceCancelTransactionBody": {
+      "type": "object"
+    },
+    "accountv1Currency": {
+      "type": "string",
+      "enum": [
+        "CURRENCY_UNSPECIFIED",
+        "CURRENCY_RUB",
+        "CURRENCY_USD",
+        "CURRENCY_EUR"
+      ],
+      "default": "CURRENCY_UNSPECIFIED"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "transactionv1Currency": {
+      "type": "string",
+      "enum": [
+        "CURRENCY_UNSPECIFIED",
+        "CURRENCY_RUB",
+        "CURRENCY_USD",
+        "CURRENCY_EUR"
+      ],
+      "default": "CURRENCY_UNSPECIFIED"
+    },
+    "v1Account": {
+      "type": "object",
+      "properties": {
+        "accountId": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "currency": {
+          "$ref": "#/definitions/accountv1Currency"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1Balance": {
+      "type": "object",
+      "properties": {
+        "accountId": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number",
+          "format": "double"
+        },
+        "currency": {
+          "$ref": "#/definitions/accountv1Currency"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1CreateAccountRequest": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "currency": {
+          "$ref": "#/definitions/accountv1Currency"
+        }
+      }
+    },
+    "v1CreateDepositRequest": {
+      "type": "object",
+      "properties": {
+        "toAccountId": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number",
+          "format": "double"
+        },
+        "currency": {
+          "$ref": "#/definitions/transactionv1Currency"
+        },
+        "idempotencyKey": {
+          "type": "string"
+        }
+      }
+    },
+    "v1CreateTransferRequest": {
+      "type": "object",
+      "properties": {
+        "fromAccountId": {
+          "type": "string"
+        },
+        "toAccountId": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number",
+          "format": "double"
+        },
+        "currency": {
+          "$ref": "#/definitions/transactionv1Currency"
+        },
+        "idempotencyKey": {
+          "type": "string"
+        }
+      }
+    },
+    "v1CreateWithdrawalRequest": {
+      "type": "object",
+      "properties": {
+        "fromAccountId": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number",
+          "format": "double"
+        },
+        "currency": {
+          "$ref": "#/definitions/transactionv1Currency"
+        },
+        "idempotencyKey": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListAccountsResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Account"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListTransactionsResponse": {
+      "type": "object",
+      "properties": {
+        "transactions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Transaction"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
+    "v1Transaction": {
+      "type": "object",
+      "properties": {
+        "transactionId": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/v1TransactionType"
+        },
+        "fromAccountId": {
+          "type": "string"
+        },
+        "toAccountId": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number",
+          "format": "double"
+        },
+        "currency": {
+          "$ref": "#/definitions/transactionv1Currency"
+        },
+        "status": {
+          "$ref": "#/definitions/v1TransactionStatus"
+        },
+        "idempotencyKey": {
+          "type": "string"
+        },
+        "errorMessage": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1TransactionStatus": {
+      "type": "string",
+      "enum": [
+        "TRANSACTION_STATUS_UNSPECIFIED",
+        "TRANSACTION_STATUS_PENDING",
+        "TRANSACTION_STATUS_PROCESSING",
+        "TRANSACTION_STATUS_COMPLETED",
+        "TRANSACTION_STATUS_FAILED",
+        "TRANSACTION_STATUS_CANCELLED"
+      ],
+      "default": "TRANSACTION_STATUS_UNSPECIFIED"
+    },
+    "v1TransactionStatusResponse": {
+      "type": "object",
+      "properties": {
+        "transactionId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1TransactionStatus"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1TransactionType": {
+      "type": "string",
+      "enum": [
+        "TRANSACTION_TYPE_UNSPECIFIED",
+        "TRANSACTION_TYPE_TRANSFER",
+        "TRANSACTION_TYPE_DEPOSIT",
+        "TRANSACTION_TYPE_WITHDRAWAL"
+      ],
+      "default": "TRANSACTION_TYPE_UNSPECIFIED"
+    }
+  }
+}

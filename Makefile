@@ -16,7 +16,7 @@ deps:
 	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest
 	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@latest
 
-proto-all: proto-account proto-transaction
+proto-all: proto-account proto-transaction proto-gateway
 
 proto-account:
 	@echo "Generating account service protobuf..."
@@ -26,10 +26,6 @@ proto-account:
 		--go_opt=paths=source_relative \
 		--go-grpc_out=services/account/internal/protogen/account \
 		--go-grpc_opt=paths=source_relative \
-		--grpc-gateway_out=services/account/internal/protogen/account \
-		--grpc-gateway_opt=paths=source_relative \
-		--openapiv2_out=services/account/api \
-		--openapiv2_opt=allow_merge=true,merge_file_name=account \
 		services/account/api/*.proto
 
 proto-transaction:
@@ -40,8 +36,18 @@ proto-transaction:
 		--go_opt=paths=source_relative \
 		--go-grpc_out=services/transaction/internal/protogen/transaction \
 		--go-grpc_opt=paths=source_relative \
-		--grpc-gateway_out=services/transaction/internal/protogen/transaction \
-		--grpc-gateway_opt=paths=source_relative \
-		--openapiv2_out=services/transaction/api \
-		--openapiv2_opt=allow_merge=true,merge_file_name=transaction \
 		services/transaction/api/*.proto
+
+proto-gateway:
+	@echo "Generating gateway service protobuf..."
+	@mkdir -p services/gateway/internal/protogen
+	protoc -I=services/gateway/api -I=third_party \
+		--go_out=services/gateway/internal/protogen \
+		--go_opt=paths=source_relative \
+		--go-grpc_out=services/gateway/internal/protogen \
+		--go-grpc_opt=paths=source_relative \
+		--grpc-gateway_out=services/gateway/internal/protogen \
+		--grpc-gateway_opt=paths=source_relative \
+		--openapiv2_out=services/gateway/api \
+		--openapiv2_opt=allow_merge=true,merge_file_name=gateway \
+		services/gateway/api/*.proto

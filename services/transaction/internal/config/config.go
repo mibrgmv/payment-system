@@ -1,13 +1,14 @@
 package config
 
 import (
+	"log"
+	"path/filepath"
+
 	"github.com/joho/godotenv"
 	"github.com/mibrgmv/payment-service/shared/env"
 	"github.com/mibrgmv/payment-service/shared/loader"
 	"github.com/mibrgmv/payment-service/shared/postgres"
 	"github.com/mibrgmv/payment-service/shared/server"
-	"log"
-	"path/filepath"
 )
 
 type Config struct {
