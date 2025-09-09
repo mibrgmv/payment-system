@@ -108,7 +108,12 @@ func (r *transactionRepo) GetTransaction(ctx context.Context, transactionID stri
 	return &transaction, nil
 }
 
-func (r *transactionRepo) ListTransactions(ctx context.Context, filters models.TransactionFilters, pageSize int32, pageToken string) ([]*models.Transaction, string, error) {
+func (r *transactionRepo) ListTransactions(
+	ctx context.Context,
+	filters models.TransactionFilters,
+	pageSize int32,
+	pageToken string,
+) ([]*models.Transaction, string, error) {
 	if pageSize == 0 {
 		return []*models.Transaction{}, "", nil
 	}
@@ -119,7 +124,7 @@ func (r *transactionRepo) ListTransactions(ctx context.Context, filters models.T
 		amount, currency, status, idempotency_key, error_message,
 		created_at, updated_at, completed_at
 	from transactions 
-	where (created_at, transaction_id) > ($1, $2)
+	where ((created_at, transaction_id) > ($1, $2) or ($1 is null and $2 is null))
 	  and ($3::uuid[] is null or from_account_id = any($3::uuid[]) or to_account_id = any($3::uuid[]))
 	  and ($4::transaction_type[] is null or type = any($4::transaction_type[]))
 	  and ($5::transaction_status[] is null or status = any($5::transaction_status[]))

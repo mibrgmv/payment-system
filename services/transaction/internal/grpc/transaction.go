@@ -99,8 +99,14 @@ func (s *transactionServer) GetTransaction(ctx context.Context, req *transaction
 func (s *transactionServer) ListTransactions(ctx context.Context, req *transactionv1.ListTransactionsRequest) (*transactionv1.ListTransactionsResponse, error) {
 	filters := models.TransactionFilters{
 		AccountIDs: req.AccountIds,
-		FromDate:   req.FromDate.AsTime(),
-		ToDate:     req.ToDate.AsTime(),
+	}
+
+	if req.FromDate != nil {
+		filters.FromDate = req.FromDate.AsTime()
+	}
+
+	if req.ToDate != nil {
+		filters.ToDate = req.ToDate.AsTime()
 	}
 
 	if req.Type != transactionv1.TransactionType_TRANSACTION_TYPE_UNSPECIFIED {
