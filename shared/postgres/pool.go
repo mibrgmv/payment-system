@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -14,8 +15,8 @@ func NewPostgresPool(ctx context.Context, cfg Config) (*pgxpool.Pool, error) {
 
 	config.MaxConns = cfg.MaxConns
 	config.MinConns = cfg.MinConns
-	config.MaxConnLifetime = cfg.MaxConnLifetime.ToDuration()
-	config.MaxConnIdleTime = cfg.MaxConnIdleTime.ToDuration()
+	config.MaxConnLifetime = cfg.MaxConnLifetime
+	config.MaxConnIdleTime = cfg.MaxConnIdleTime
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {

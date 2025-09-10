@@ -12,13 +12,13 @@ import (
 )
 
 type Config struct {
-	Server   server.Config   `json:"server"`
-	Postgres postgres.Config `json:"postgres"`
+	Server   server.Config   `yaml:"server"`
+	Postgres postgres.Config `yaml:"postgres"`
 }
 
 func Load(config *Config) error {
-	jsonPath := filepath.Join("internal", "config", "config.json")
-	if err := loader.Load(config, jsonPath); err != nil {
+	yamlPath := filepath.Join("internal", "config", "config.yaml")
+	if err := loader.Load(config, yamlPath); err != nil {
 		return err
 	}
 

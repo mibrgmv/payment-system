@@ -1,12 +1,12 @@
 package loader
 
 import (
-	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 func Load(config interface{}, filename string) error {
@@ -20,8 +20,6 @@ func Load(config interface{}, filename string) error {
 	switch ext {
 	case ".yaml", ".yml":
 		err = yaml.Unmarshal(f, config)
-	case ".json":
-		err = json.Unmarshal(f, config)
 	default:
 		return fmt.Errorf("unsupported config file format: %s", ext)
 	}
