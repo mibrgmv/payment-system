@@ -4,18 +4,22 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/mibrgmv/payment-service/services/transaction/internal/repository"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/service/models"
 )
 
 var (
-	ErrInvalidTransaction   = errors.New("invalid transaction")
-	ErrInsufficientFunds    = errors.New("insufficient funds")
-	ErrIdempotencyConflict  = errors.New("idempotency key conflict")
-	ErrTransactionNotActive = errors.New("transaction is not in active state")
+	ErrTransactionIDRequired = errors.New("transaction ID is required")
+	ErrInvalidTransaction    = errors.New("invalid transaction")
+	ErrInvalidTransactionID  = errors.New("invalid transaction ID format")
+	ErrInsufficientFunds     = errors.New("insufficient funds")
+	ErrIdempotencyConflict   = errors.New("idempotency key conflict")
+	ErrTransactionNotActive  = errors.New("transaction is not in active state")
+	ErrTransactionNotFound   = repository.ErrTransactionNotFound
 )
 
 type TransactionService interface {
@@ -140,6 +144,10 @@ func (s *transactionService) CreateWithdrawal(
 }
 
 func (s *transactionService) GetTransaction(ctx context.Context, transactionID string) (*models.Transaction, error) {
+	if err := s.validateTransactionID(transactionID); err != nil {
+		return nil, err
+	}
+
 	return s.repo.GetTransaction(ctx, transactionID)
 }
 
@@ -148,6 +156,10 @@ func (s *transactionService) ListTransactions(ctx context.Context, filters model
 }
 
 func (s *transactionService) CancelTransaction(ctx context.Context, transactionID string) (*models.Transaction, error) {
+	if err := s.validateTransactionID(transactionID); err != nil {
+		return nil, err
+	}
+
 	if err := s.repo.CancelTransaction(ctx, transactionID); err != nil {
 		return nil, err
 	}
@@ -155,5 +167,21 @@ func (s *transactionService) CancelTransaction(ctx context.Context, transactionI
 }
 
 func (s *transactionService) GetTransactionStatus(ctx context.Context, transactionID string) (*models.Transaction, error) {
+	if err := s.validateTransactionID(transactionID); err != nil {
+		return nil, err
+	}
+
 	return s.repo.GetTransaction(ctx, transactionID)
+}
+
+func (s *transactionService) validateTransactionID(transactionID string) error {
+	if transactionID == "" {
+		return ErrTransactionIDRequired
+	}
+
+	if _, err := uuid.Parse(transactionID); err != nil {
+		return fmt.Errorf("%w: %s", ErrInvalidTransactionID, transactionID)
+	}
+
+	return nil
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/mibrgmv/payment-service/services/transaction/internal/repository"
 
 	"github.com/mibrgmv/payment-service/services/transaction/internal/protogen/transaction"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/service"
@@ -87,10 +86,16 @@ func (s *transactionServer) CreateWithdrawal(ctx context.Context, req *transacti
 func (s *transactionServer) GetTransaction(ctx context.Context, req *transactionv1.GetTransactionRequest) (*transactionv1.Transaction, error) {
 	transaction, err := s.service.GetTransaction(ctx, req.TransactionId)
 	if err != nil {
-		if errors.Is(err, repository.ErrTransactionNotFound) {
+		switch {
+		case errors.Is(err, service.ErrTransactionIDRequired):
+			return nil, status.Error(codes.InvalidArgument, "transaction_id is required")
+		case errors.Is(err, service.ErrInvalidTransactionID):
+			return nil, status.Error(codes.InvalidArgument, "transaction_id must be a valid UUID")
+		case errors.Is(err, service.ErrTransactionNotFound):
 			return nil, status.Error(codes.NotFound, "transaction not found")
+		default:
+			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get transaction: %v", err))
 		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get transaction: %v", err))
 	}
 
 	return transaction.ToProto(), nil
@@ -149,10 +154,18 @@ func (s *transactionServer) ListTransactions(ctx context.Context, req *transacti
 func (s *transactionServer) CancelTransaction(ctx context.Context, req *transactionv1.CancelTransactionRequest) (*transactionv1.Transaction, error) {
 	transaction, err := s.service.CancelTransaction(ctx, req.TransactionId)
 	if err != nil {
-		if errors.Is(err, repository.ErrTransactionNotFound) {
+		switch {
+		case errors.Is(err, service.ErrTransactionIDRequired):
+			return nil, status.Error(codes.InvalidArgument, "transaction_id is required")
+		case errors.Is(err, service.ErrInvalidTransactionID):
+			return nil, status.Error(codes.InvalidArgument, "transaction_id must be a valid UUID")
+		case errors.Is(err, service.ErrTransactionNotFound):
 			return nil, status.Error(codes.NotFound, "transaction not found")
+		case errors.Is(err, service.ErrTransactionNotActive):
+			return nil, status.Error(codes.FailedPrecondition, "transaction cannot be cancelled - not in active state")
+		default:
+			return nil, status.Error(codes.Internal, "failed to cancel transaction")
 		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to cancel transaction: %v", err))
 	}
 
 	return transaction.ToProto(), nil
@@ -161,10 +174,16 @@ func (s *transactionServer) CancelTransaction(ctx context.Context, req *transact
 func (s *transactionServer) GetTransactionStatus(ctx context.Context, req *transactionv1.GetTransactionStatusRequest) (*transactionv1.TransactionStatusResponse, error) {
 	transaction, err := s.service.GetTransactionStatus(ctx, req.TransactionId)
 	if err != nil {
-		if errors.Is(err, repository.ErrTransactionNotFound) {
+		switch {
+		case errors.Is(err, service.ErrTransactionIDRequired):
+			return nil, status.Error(codes.InvalidArgument, "transaction_id is required")
+		case errors.Is(err, service.ErrInvalidTransactionID):
+			return nil, status.Error(codes.InvalidArgument, "transaction_id must be a valid UUID")
+		case errors.Is(err, service.ErrTransactionNotFound):
 			return nil, status.Error(codes.NotFound, "transaction not found")
+		default:
+			return nil, status.Error(codes.Internal, "failed to get transaction status")
 		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get transaction status: %v", err))
 	}
 
 	return &transactionv1.TransactionStatusResponse{
