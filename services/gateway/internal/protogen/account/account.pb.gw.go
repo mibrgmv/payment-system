@@ -6,7 +6,7 @@ Package accountv1 is a reverse proxy.
 
 It translates gRPC into RESTful JSON APIs.
 */
-package account
+package accountv1
 
 import (
 	"context"

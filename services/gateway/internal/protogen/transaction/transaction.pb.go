@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: transaction.proto
 
-package transaction
+package transactionv1
 
 import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
