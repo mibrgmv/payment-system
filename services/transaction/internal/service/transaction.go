@@ -13,13 +13,11 @@ import (
 )
 
 var (
-	ErrTransactionIDRequired = errors.New("transaction ID is required")
-	ErrInvalidTransaction    = errors.New("invalid transaction")
-	ErrInvalidTransactionID  = errors.New("invalid transaction ID format")
-	ErrInsufficientFunds     = errors.New("insufficient funds")
-	ErrIdempotencyConflict   = errors.New("idempotency key conflict")
-	ErrTransactionNotActive  = errors.New("transaction is not in active state")
-	ErrTransactionNotFound   = repository.ErrTransactionNotFound
+	ErrInvalidTransaction   = errors.New("invalid transaction")
+	ErrInsufficientFunds    = errors.New("insufficient funds")
+	ErrIdempotencyConflict  = errors.New("idempotency key conflict")
+	ErrTransactionNotActive = errors.New("transaction is not in active state")
+	ErrTransactionNotFound  = repository.ErrTransactionNotFound
 )
 
 type TransactionService interface {
@@ -70,9 +68,9 @@ func (s *transactionService) CreateTransfer(
 		UpdatedAt:      time.Now(),
 	}
 
-	if err := s.repo.CreateTransaction(ctx, transaction); err != nil {
-		return nil, fmt.Errorf("failed to create transfer: %w", err)
-	}
+	//if err := s.repo.CreateTransaction(ctx, transaction); err != nil {
+	//	return nil, fmt.Errorf("failed to create transfer: %w", err)
+	//}
 
 	return transaction, nil
 }
@@ -84,19 +82,24 @@ func (s *transactionService) CreateDeposit(
 	currency models.Currency,
 	idempotencyKey string,
 ) (*models.Transaction, error) {
-	if err := s.validateDepositInput(toAccountID, amount, idempotencyKey); err != nil {
-		return nil, err
+	tx, err := s.repo.BeginTx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
+	defer tx.Rollback(ctx)
 
-	existingTransaction, err := s.repo.GetTransactionByIdempotencyKey(ctx, idempotencyKey)
+	existing, err := s.repo.GetTransactionByIdempotencyKeyTx(ctx, tx, idempotencyKey)
 	if err != nil && !errors.Is(err, repository.ErrTransactionNotFound) {
-		return nil, fmt.Errorf("failed to check idempotency key: %w", err)
+		return nil, fmt.Errorf("failed to check idempotency: %w", err)
 	}
-	if existingTransaction != nil {
-		if s.isIdempotentRequest(existingTransaction, toAccountID, amount, currency, models.TransactionTypeDeposit) {
-			return existingTransaction, nil
+	if existing != nil {
+		if !s.isIdempotentRequest(existing, toAccountID, amount, currency, models.TransactionTypeDeposit) {
+			return nil, fmt.Errorf("%w: different transaction exists with key %s", ErrIdempotencyConflict, idempotencyKey)
 		}
-		return nil, fmt.Errorf("%w: different transaction exists with key %s", ErrIdempotencyConflict, idempotencyKey)
+		if err := tx.Commit(ctx); err != nil {
+			return nil, fmt.Errorf("failed to commit transaction: %w", err)
+		}
+		return existing, nil
 	}
 
 	transaction := &models.Transaction{
@@ -111,35 +114,15 @@ func (s *transactionService) CreateDeposit(
 		UpdatedAt:      time.Now(),
 	}
 
-	if err := s.repo.CreateTransaction(ctx, transaction); err != nil {
-		if errors.Is(err, ErrIdempotencyConflict) {
-			if existingTx, getErr := s.repo.GetTransactionByIdempotencyKey(ctx, idempotencyKey); getErr == nil {
-				if s.isIdempotentRequest(existingTx, toAccountID, amount, currency, models.TransactionTypeDeposit) {
-					return existingTx, nil
-				}
-			}
-			return nil, fmt.Errorf("%w: %s", ErrIdempotencyConflict, idempotencyKey)
-		}
-		return nil, fmt.Errorf("failed to create deposit: %w", err)
+	if err := s.repo.CreateTransactionTx(ctx, tx, transaction); err != nil {
+		return nil, fmt.Errorf("failed to create transaction: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return transaction, nil
-}
-
-func (s *transactionService) validateDepositInput(toAccountID string, amount float64, idempotencyKey string) error {
-	if toAccountID == "" {
-		return fmt.Errorf("%w: to_account_id is required", ErrInvalidTransaction)
-	}
-	if _, err := uuid.Parse(toAccountID); err != nil {
-		return fmt.Errorf("%w: to_account_id must be a valid UUID: %s", ErrInvalidTransaction, toAccountID)
-	}
-	if amount <= 0 {
-		return fmt.Errorf("%w: amount must be positive, got %f", ErrInvalidTransaction, amount)
-	}
-	if idempotencyKey == "" {
-		return fmt.Errorf("%w: idempotency_key is required", ErrInvalidTransaction)
-	}
-	return nil
 }
 
 func (s *transactionService) CreateWithdrawal(
@@ -168,18 +151,14 @@ func (s *transactionService) CreateWithdrawal(
 		UpdatedAt:      time.Now(),
 	}
 
-	if err := s.repo.CreateTransaction(ctx, transaction); err != nil {
-		return nil, fmt.Errorf("failed to create withdrawal: %w", err)
-	}
+	//if err := s.repo.CreateTransaction(ctx, transaction); err != nil {
+	//	return nil, fmt.Errorf("failed to create withdrawal: %w", err)
+	//}
 
 	return transaction, nil
 }
 
 func (s *transactionService) GetTransaction(ctx context.Context, transactionID string) (*models.Transaction, error) {
-	if err := s.validateTransactionID(transactionID); err != nil {
-		return nil, err
-	}
-
 	return s.repo.GetTransaction(ctx, transactionID)
 }
 
@@ -188,10 +167,6 @@ func (s *transactionService) ListTransactions(ctx context.Context, filters model
 }
 
 func (s *transactionService) CancelTransaction(ctx context.Context, transactionID string) (*models.Transaction, error) {
-	if err := s.validateTransactionID(transactionID); err != nil {
-		return nil, err
-	}
-
 	if err := s.repo.CancelTransaction(ctx, transactionID); err != nil {
 		return nil, err
 	}
@@ -199,23 +174,7 @@ func (s *transactionService) CancelTransaction(ctx context.Context, transactionI
 }
 
 func (s *transactionService) GetTransactionStatus(ctx context.Context, transactionID string) (*models.Transaction, error) {
-	if err := s.validateTransactionID(transactionID); err != nil {
-		return nil, err
-	}
-
 	return s.repo.GetTransaction(ctx, transactionID)
-}
-
-func (s *transactionService) validateTransactionID(transactionID string) error {
-	if transactionID == "" {
-		return ErrTransactionIDRequired
-	}
-
-	if _, err := uuid.Parse(transactionID); err != nil {
-		return fmt.Errorf("%w: %s", ErrInvalidTransactionID, transactionID)
-	}
-
-	return nil
 }
 
 func (s *transactionService) isIdempotentRequest(existingTransaction *models.Transaction, toAccountID string, amount float64, currency models.Currency, txType models.TransactionType) bool {

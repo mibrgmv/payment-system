@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/protogen/transaction"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/service"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/service/models"
@@ -44,9 +45,21 @@ func (s *transactionServer) CreateTransfer(ctx context.Context, req *transaction
 }
 
 func (s *transactionServer) CreateDeposit(ctx context.Context, req *transactionv1.CreateDepositRequest) (*transactionv1.Transaction, error) {
+	if req.ToAccountId == "" {
+		return nil, status.Error(codes.InvalidArgument, "to_account_id is required")
+	}
+	if _, err := uuid.Parse(req.ToAccountId); err != nil {
+		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("to_account_id must be a valid UUID"))
+	}
+	if req.Amount <= 0 {
+		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("amount must be greater than zero, got %v", req.Amount))
+	}
 	currency, err := models.CurrencyFromProto(req.Currency)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid currency: %v", err))
+	}
+	if req.IdempotencyKey == "" {
+		return nil, status.Error(codes.InvalidArgument, "idempotency_key is required")
 	}
 
 	transaction, err := s.service.CreateDeposit(
@@ -91,13 +104,13 @@ func (s *transactionServer) CreateWithdrawal(ctx context.Context, req *transacti
 }
 
 func (s *transactionServer) GetTransaction(ctx context.Context, req *transactionv1.GetTransactionRequest) (*transactionv1.Transaction, error) {
+	if err := validateTransactionId(req.TransactionId); err != nil {
+		return nil, err
+	}
+
 	transaction, err := s.service.GetTransaction(ctx, req.TransactionId)
 	if err != nil {
 		switch {
-		case errors.Is(err, service.ErrTransactionIDRequired):
-			return nil, status.Error(codes.InvalidArgument, "transaction_id is required")
-		case errors.Is(err, service.ErrInvalidTransactionID):
-			return nil, status.Error(codes.InvalidArgument, "transaction_id must be a valid UUID")
 		case errors.Is(err, service.ErrTransactionNotFound):
 			return nil, status.Error(codes.NotFound, "transaction not found")
 		default:
@@ -159,13 +172,13 @@ func (s *transactionServer) ListTransactions(ctx context.Context, req *transacti
 }
 
 func (s *transactionServer) CancelTransaction(ctx context.Context, req *transactionv1.CancelTransactionRequest) (*transactionv1.Transaction, error) {
+	if err := validateTransactionId(req.TransactionId); err != nil {
+		return nil, err
+	}
+
 	transaction, err := s.service.CancelTransaction(ctx, req.TransactionId)
 	if err != nil {
 		switch {
-		case errors.Is(err, service.ErrTransactionIDRequired):
-			return nil, status.Error(codes.InvalidArgument, "transaction_id is required")
-		case errors.Is(err, service.ErrInvalidTransactionID):
-			return nil, status.Error(codes.InvalidArgument, "transaction_id must be a valid UUID")
 		case errors.Is(err, service.ErrTransactionNotFound):
 			return nil, status.Error(codes.NotFound, "transaction not found")
 		case errors.Is(err, service.ErrTransactionNotActive):
@@ -179,13 +192,13 @@ func (s *transactionServer) CancelTransaction(ctx context.Context, req *transact
 }
 
 func (s *transactionServer) GetTransactionStatus(ctx context.Context, req *transactionv1.GetTransactionStatusRequest) (*transactionv1.TransactionStatusResponse, error) {
+	if err := validateTransactionId(req.TransactionId); err != nil {
+		return nil, err
+	}
+
 	transaction, err := s.service.GetTransactionStatus(ctx, req.TransactionId)
 	if err != nil {
 		switch {
-		case errors.Is(err, service.ErrTransactionIDRequired):
-			return nil, status.Error(codes.InvalidArgument, "transaction_id is required")
-		case errors.Is(err, service.ErrInvalidTransactionID):
-			return nil, status.Error(codes.InvalidArgument, "transaction_id must be a valid UUID")
 		case errors.Is(err, service.ErrTransactionNotFound):
 			return nil, status.Error(codes.NotFound, "transaction not found")
 		default:
@@ -198,4 +211,14 @@ func (s *transactionServer) GetTransactionStatus(ctx context.Context, req *trans
 		Status:        transaction.Status.ToProto(),
 		LastUpdated:   timestamppb.New(transaction.UpdatedAt),
 	}, nil
+}
+
+func validateTransactionId(transactionID string) error {
+	if transactionID == "" {
+		return status.Error(codes.InvalidArgument, "transaction_id is required")
+	}
+	if _, err := uuid.Parse(transactionID); err != nil {
+		return status.Error(codes.InvalidArgument, "transaction_id must be a valid UUID")
+	}
+	return nil
 }

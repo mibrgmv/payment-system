@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/service/models"
 )
 
@@ -13,9 +14,10 @@ var (
 )
 
 type TransactionRepository interface {
-	CreateTransaction(ctx context.Context, transaction *models.Transaction) error
+	BeginTx(ctx context.Context) (pgx.Tx, error)
+	CreateTransactionTx(ctx context.Context, tx pgx.Tx, transaction *models.Transaction) error
 	GetTransaction(ctx context.Context, transactionID string) (*models.Transaction, error)
-	GetTransactionByIdempotencyKey(ctx context.Context, idempotencyKey string) (*models.Transaction, error)
+	GetTransactionByIdempotencyKeyTx(ctx context.Context, tx pgx.Tx, idempotencyKey string) (*models.Transaction, error)
 	ListTransactions(ctx context.Context, filters models.TransactionFilters, pageSize int32, pageToken string) ([]*models.Transaction, string, error)
 	UpdateTransactionStatus(ctx context.Context, transactionID string, status models.TransactionStatus, errorMessage *string) error
 	CancelTransaction(ctx context.Context, transactionID string) error
