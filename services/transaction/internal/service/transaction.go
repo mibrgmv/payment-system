@@ -84,11 +84,19 @@ func (s *transactionService) CreateDeposit(
 	currency models.Currency,
 	idempotencyKey string,
 ) (*models.Transaction, error) {
-	if toAccountID == "" {
-		return nil, fmt.Errorf("%w: to account must be specified", ErrInvalidTransaction)
+	if err := s.validateDepositInput(toAccountID, amount, idempotencyKey); err != nil {
+		return nil, err
 	}
-	if amount <= 0 {
-		return nil, fmt.Errorf("%w: amount must be positive", ErrInvalidTransaction)
+
+	existingTransaction, err := s.repo.GetTransactionByIdempotencyKey(ctx, idempotencyKey)
+	if err != nil && !errors.Is(err, repository.ErrTransactionNotFound) {
+		return nil, fmt.Errorf("failed to check idempotency key: %w", err)
+	}
+	if existingTransaction != nil {
+		if s.isIdempotentRequest(existingTransaction, toAccountID, amount, currency, models.TransactionTypeDeposit) {
+			return existingTransaction, nil
+		}
+		return nil, fmt.Errorf("%w: different transaction exists with key %s", ErrIdempotencyConflict, idempotencyKey)
 	}
 
 	transaction := &models.Transaction{
@@ -104,10 +112,34 @@ func (s *transactionService) CreateDeposit(
 	}
 
 	if err := s.repo.CreateTransaction(ctx, transaction); err != nil {
+		if errors.Is(err, ErrIdempotencyConflict) {
+			if existingTx, getErr := s.repo.GetTransactionByIdempotencyKey(ctx, idempotencyKey); getErr == nil {
+				if s.isIdempotentRequest(existingTx, toAccountID, amount, currency, models.TransactionTypeDeposit) {
+					return existingTx, nil
+				}
+			}
+			return nil, fmt.Errorf("%w: %s", ErrIdempotencyConflict, idempotencyKey)
+		}
 		return nil, fmt.Errorf("failed to create deposit: %w", err)
 	}
 
 	return transaction, nil
+}
+
+func (s *transactionService) validateDepositInput(toAccountID string, amount float64, idempotencyKey string) error {
+	if toAccountID == "" {
+		return fmt.Errorf("%w: to_account_id is required", ErrInvalidTransaction)
+	}
+	if _, err := uuid.Parse(toAccountID); err != nil {
+		return fmt.Errorf("%w: to_account_id must be a valid UUID: %s", ErrInvalidTransaction, toAccountID)
+	}
+	if amount <= 0 {
+		return fmt.Errorf("%w: amount must be positive, got %f", ErrInvalidTransaction, amount)
+	}
+	if idempotencyKey == "" {
+		return fmt.Errorf("%w: idempotency_key is required", ErrInvalidTransaction)
+	}
+	return nil
 }
 
 func (s *transactionService) CreateWithdrawal(
@@ -184,4 +216,12 @@ func (s *transactionService) validateTransactionID(transactionID string) error {
 	}
 
 	return nil
+}
+
+func (s *transactionService) isIdempotentRequest(existingTransaction *models.Transaction, toAccountID string, amount float64, currency models.Currency, txType models.TransactionType) bool {
+	return existingTransaction.Type == txType &&
+		existingTransaction.ToAccountID != nil &&
+		*existingTransaction.ToAccountID == toAccountID &&
+		existingTransaction.Amount == amount &&
+		existingTransaction.Currency == currency
 }

@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/mibrgmv/payment-service/services/transaction/internal/repository"
-	"github.com/mibrgmv/payment-service/shared/pagination"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/mibrgmv/payment-service/services/transaction/internal/repository"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/service/models"
+	"github.com/mibrgmv/payment-service/shared/pagination"
 )
 
 type transactionRepo struct {
@@ -22,14 +22,35 @@ func NewTransactionRepository(pool *pgxpool.Pool) repository.TransactionReposito
 }
 
 func (r *transactionRepo) CreateTransaction(ctx context.Context, transaction *models.Transaction) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
 	sql := `
+    select transaction_id 
+    from transactions 
+    where idempotency_key = $1 
+    for update
+    `
+
+	var existingID string
+	err = tx.QueryRow(ctx, sql, transaction.IdempotencyKey).Scan(&existingID)
+	if err == nil {
+		return repository.ErrIdempotencyConflict
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("failed to check idempotency key: %w", err)
+	}
+
+	sql = `
 	insert into transactions (
 		transaction_id, type, from_account_id, to_account_id, 
 		amount, currency, status, idempotency_key, error_message
 	) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 
-	_, err := r.pool.Exec(ctx, sql,
+	if _, err = tx.Exec(ctx, sql,
 		transaction.TransactionID,
 		transaction.Type.String(),
 		transaction.FromAccountID,
@@ -39,9 +60,14 @@ func (r *transactionRepo) CreateTransaction(ctx context.Context, transaction *mo
 		transaction.Status.String(),
 		transaction.IdempotencyKey,
 		transaction.ErrorMessage,
-	)
+	); err != nil {
+		return fmt.Errorf("failed to insert transaction: %w", err)
+	}
 
-	return err
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return nil
 }
 
 func (r *transactionRepo) GetTransaction(ctx context.Context, transactionID string) (*models.Transaction, error) {
@@ -97,6 +123,70 @@ func (r *transactionRepo) GetTransaction(ctx context.Context, transactionID stri
 	status, err := models.TransactionStatusFromString(statusStr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid transaction status in database: %w", err)
+	}
+	transaction.Status = status
+
+	transaction.FromAccountID = fromAccountID
+	transaction.ToAccountID = toAccountID
+	transaction.ErrorMessage = errorMessage
+	transaction.CompletedAt = completedAt
+
+	return &transaction, nil
+}
+
+func (r *transactionRepo) GetTransactionByIdempotencyKey(ctx context.Context, idempotencyKey string) (*models.Transaction, error) {
+	sql := `
+    select 
+		transaction_id, type, from_account_id, to_account_id, 
+		amount, currency, status, idempotency_key, error_message,
+		created_at, updated_at, completed_at
+	from transactions 
+    where idempotency_key = $1
+    `
+
+	var transaction models.Transaction
+	var typeStr, currencyStr, statusStr string
+	var fromAccountID, toAccountID *string
+	var errorMessage *string
+	var completedAt *time.Time
+
+	err := r.pool.QueryRow(ctx, sql, idempotencyKey).Scan(
+		&transaction.TransactionID,
+		&typeStr,
+		&fromAccountID,
+		&toAccountID,
+		&transaction.Amount,
+		&currencyStr,
+		&statusStr,
+		&transaction.IdempotencyKey,
+		&errorMessage,
+		&transaction.CreatedAt,
+		&transaction.UpdatedAt,
+		&completedAt,
+	)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, repository.ErrTransactionNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("database query failed: %w", err)
+	}
+
+	transactionType, err := models.TransactionTypeFromString(typeStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid transaction type '%s' in database: %w", typeStr, err)
+	}
+	transaction.Type = transactionType
+
+	currency, err := models.CurrencyFromString(currencyStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid currency '%s' in database: %w", currencyStr, err)
+	}
+	transaction.Currency = currency
+
+	status, err := models.TransactionStatusFromString(statusStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid transaction status '%s' in database: %w", statusStr, err)
 	}
 	transaction.Status = status
 

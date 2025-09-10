@@ -57,7 +57,14 @@ func (s *transactionServer) CreateDeposit(ctx context.Context, req *transactionv
 		req.IdempotencyKey,
 	)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create deposit: %v", err))
+		switch {
+		case errors.Is(err, service.ErrInvalidTransaction):
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		case errors.Is(err, service.ErrIdempotencyConflict):
+			return nil, status.Error(codes.AlreadyExists, "transaction with this idempotency key already exists")
+		default:
+			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create deposit: %v", err))
+		}
 	}
 
 	return transaction.ToProto(), nil
