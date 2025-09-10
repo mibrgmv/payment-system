@@ -574,7 +574,7 @@ var File_account_proto protoreflect.FileDescriptor
 const file_account_proto_rawDesc = "" +
 	"\n" +
 	"\raccount.proto\x12\n" +
-	"account.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a google/protobuf/field_mask.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\"\xe9\x01\n" +
+	"account.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a google/protobuf/field_mask.proto\x1a\x1cgoogle/api/annotations.proto\"\xe9\x01\n" +
 	"\aAccount\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x01 \x01(\tR\taccountId\x12\x17\n" +
@@ -627,7 +627,7 @@ const file_account_proto_rawDesc = "" +
 	"\rUpdateAccount\x12 .account.v1.UpdateAccountRequest\x1a\x13.account.v1.Account\"2\x82\xd3\xe4\x93\x02,:\aaccount2!/v1/accounts/{account.account_id}\x12l\n" +
 	"\rDeleteAccount\x12 .account.v1.DeleteAccountRequest\x1a\x16.google.protobuf.Empty\"!\x82\xd3\xe4\x93\x02\x1b*\x19/v1/accounts/{account_id}\x12k\n" +
 	"\n" +
-	"GetBalance\x12\x1d.account.v1.GetBalanceRequest\x1a\x13.account.v1.Balance\")\x82\xd3\xe4\x93\x02#\x12!/v1/accounts/{account_id}/balanceB9Z7github.com/mibrgmv/payment-service/account/v1;accountv1b\x06proto3"
+	"GetBalance\x12\x1d.account.v1.GetBalanceRequest\x1a\x13.account.v1.Balance\")\x82\xd3\xe4\x93\x02#\x12!/v1/accounts/{account_id}/balanceB\\ZZgithub.com/mibrgmv/payment-service/services/account/internal/protogen/account/v1;accountv1b\x06proto3"
 
 var (
 	file_account_proto_rawDescOnce sync.Once

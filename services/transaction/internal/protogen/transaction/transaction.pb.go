@@ -10,10 +10,7 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	_ "google.golang.org/protobuf/types/known/emptypb"
-	_ "google.golang.org/protobuf/types/known/fieldmaskpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-	_ "google.golang.org/protobuf/types/known/wrapperspb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -872,7 +869,7 @@ var File_transaction_proto protoreflect.FileDescriptor
 
 const file_transaction_proto_rawDesc = "" +
 	"\n" +
-	"\x11transaction.proto\x12\x0etransaction.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a google/protobuf/field_mask.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1cgoogle/api/annotations.proto\"\xc1\x04\n" +
+	"\x11transaction.proto\x12\x0etransaction.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\"\xc1\x04\n" +
 	"\vTransaction\x12%\n" +
 	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\x123\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x1f.transaction.v1.TransactionTypeR\x04type\x12&\n" +

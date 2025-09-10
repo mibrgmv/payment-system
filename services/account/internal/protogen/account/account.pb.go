@@ -574,7 +574,7 @@ var File_account_proto protoreflect.FileDescriptor
 const file_account_proto_rawDesc = "" +
 	"\n" +
 	"\raccount.proto\x12\n" +
-	"account.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a google/protobuf/field_mask.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\"\xe9\x01\n" +
+	"account.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a google/protobuf/field_mask.proto\x1a\x1cgoogle/api/annotations.proto\"\xe9\x01\n" +
 	"\aAccount\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x01 \x01(\tR\taccountId\x12\x17\n" +

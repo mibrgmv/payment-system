@@ -8,7 +8,6 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 import "google/api/annotations.proto";
-import "google/api/field_behavior.proto";
 
 service AccountService {
   rpc GetAccount(GetAccountRequest) returns (Account) {

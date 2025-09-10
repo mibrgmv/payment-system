@@ -2,13 +2,12 @@ syntax = "proto3";
 
 package account.v1;
 
-option go_package = "github.com/mibrgmv/payment-service/account/v1;accountv1";
+option go_package = "github.com/mibrgmv/payment-service/services/account/internal/protogen/account/v1;accountv1";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 import "google/api/annotations.proto";
-import "google/api/field_behavior.proto";
 
 service AccountService {
   rpc GetAccount(GetAccountRequest) returns (Account) {

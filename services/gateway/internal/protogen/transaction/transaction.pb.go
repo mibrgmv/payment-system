@@ -10,10 +10,7 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	_ "google.golang.org/protobuf/types/known/emptypb"
-	_ "google.golang.org/protobuf/types/known/fieldmaskpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-	_ "google.golang.org/protobuf/types/known/wrapperspb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -872,7 +869,7 @@ var File_transaction_proto protoreflect.FileDescriptor
 
 const file_transaction_proto_rawDesc = "" +
 	"\n" +
-	"\x11transaction.proto\x12\x0etransaction.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a google/protobuf/field_mask.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1cgoogle/api/annotations.proto\"\xc1\x04\n" +
+	"\x11transaction.proto\x12\x0etransaction.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\"\xc1\x04\n" +
 	"\vTransaction\x12%\n" +
 	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\x123\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x1f.transaction.v1.TransactionTypeR\x04type\x12&\n" +
@@ -952,7 +949,7 @@ const file_transaction_proto_rawDesc = "" +
 	"\x0eGetTransaction\x12%.transaction.v1.GetTransactionRequest\x1a\x1b.transaction.v1.Transaction\")\x82\xd3\xe4\x93\x02#\x12!/v1/transactions/{transaction_id}\x12\x7f\n" +
 	"\x10ListTransactions\x12'.transaction.v1.ListTransactionsRequest\x1a(.transaction.v1.ListTransactionsResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/transactions\x12\x8f\x01\n" +
 	"\x11CancelTransaction\x12(.transaction.v1.CancelTransactionRequest\x1a\x1b.transaction.v1.Transaction\"3\x82\xd3\xe4\x93\x02-:\x01*\"(/v1/transactions/{transaction_id}:cancel\x12\xa0\x01\n" +
-	"\x14GetTransactionStatus\x12+.transaction.v1.GetTransactionStatusRequest\x1a).transaction.v1.TransactionStatusResponse\"0\x82\xd3\xe4\x93\x02*\x12(/v1/transactions/{transaction_id}/statusB>Z<github.com/mibrgmv/payment-service/transaction;transactionv1b\x06proto3"
+	"\x14GetTransactionStatus\x12+.transaction.v1.GetTransactionStatusRequest\x1a).transaction.v1.TransactionStatusResponse\"0\x82\xd3\xe4\x93\x02*\x12(/v1/transactions/{transaction_id}/statusBeZcgithub.com/mibrgmv/payment-service/services/transaction/internal/protogen/transaction;transactionv1b\x06proto3"
 
 var (
 	file_transaction_proto_rawDescOnce sync.Once
