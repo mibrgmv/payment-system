@@ -8,13 +8,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"github.com/mibrgmv/payment-service/services/account/internal/repository/postgres"
 	"github.com/mibrgmv/payment-service/services/account/internal/service"
 	"github.com/mibrgmv/payment-service/services/account/internal/service/models"
 	postgresshared "github.com/mibrgmv/payment-service/shared/postgres"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBalanceProcessor_ProcessBalanceChangeEvent_Success(t *testing.T) {
@@ -266,34 +265,25 @@ func setupTestDB(t *testing.T) *pgxpool.Pool {
 	return db
 }
 
-func cleanupTestDB(t *testing.T, db *pgxpool.Pool) {
-	ctx := context.Background()
-
-	_, err := db.Exec(ctx, "TRUNCATE TABLE processed_events CASCADE")
+func cleanupTestDB(t *testing.T, pool *pgxpool.Pool) {
+	migrationPath := "../migrations"
+	err := postgresshared.MigrateDown(pool, migrationPath)
 	require.NoError(t, err)
-	_, err = db.Exec(ctx, "TRUNCATE TABLE balances CASCADE")
-	require.NoError(t, err)
-	_, err = db.Exec(ctx, "TRUNCATE TABLE accounts CASCADE")
-	require.NoError(t, err)
-
-	//db.Close()
 }
 
 func setupTestAccount(t *testing.T, db *pgxpool.Pool, accountID, userID string, initialBalance int64) {
 	ctx := context.Background()
 
-	// Insert test account
 	_, err := db.Exec(ctx, `
-        insert into accounts (account_id, user_id, currency, created_at, updated_at)
-        values ($1, $2, 'USD', now(), now())
-    `, accountID, userID)
+       insert into accounts (account_id, user_id, currency, created_at, updated_at)
+       values ($1, $2, 'USD', now(), now())
+   `, accountID, userID)
 	require.NoError(t, err)
 
-	// Insert initial balance
 	_, err = db.Exec(ctx, `
-        insert into balances (account_id, amount, last_updated)
-        values ($1, $2, now())
-    `, accountID, initialBalance)
+       insert into balances (account_id, amount, last_updated)
+       values ($1, $2, now())
+   `, accountID, initialBalance)
 	require.NoError(t, err)
 }
 
@@ -327,7 +317,7 @@ func setupTestAccount(t *testing.T, db *pgxpool.Pool, accountID, userID string, 
 //}
 //
 //// Helper functions for benchmark that match testing.B interface
-//func setupTestDB(t interface{
+//func setupTestDB(t interface {
 //	Helper()
 //	Errorf(format string, args ...interface{})
 //	FailNow()
@@ -343,42 +333,32 @@ func setupTestAccount(t *testing.T, db *pgxpool.Pool, accountID, userID string, 
 //	}
 //
 //	// Run migrations
-//	migrationPath := "../../migrations"
-//	err = postgres.MigrateUp(db, migrationPath)
+//	migrationPath := "../migrations"
+//	err = postgresshared.MigrateUp(db, migrationPath)
 //	if err != nil {
-//		t.Errorf("Failed to run migrations: %v", err)
+//		t.Errorf("Failed to run up migrations: %v", err)
 //		t.FailNow()
 //	}
 //
 //	return db
 //}
 //
-//func cleanupTestDB(t interface{
+//func cleanupTestDB(t interface {
 //	Helper()
 //	Errorf(format string, args ...interface{})
 //	FailNow()
-//}, db *pgxpool.Pool) {
+//}, pool *pgxpool.Pool) {
 //	t.Helper()
 //
-//	ctx := context.Background()
-//
-//	_, err := db.Exec(ctx, "TRUNCATE TABLE processed_events CASCADE")
+//	migrationPath := "../migrations"
+//	err := postgresshared.MigrateDown(pool, migrationPath)
 //	if err != nil {
-//		t.Errorf("Failed to cleanup processed_events: %v", err)
+//		t.Errorf("Failed to run down migrations: %v", err)
+//		t.FailNow()
 //	}
-//	_, err = db.Exec(ctx, "TRUNCATE TABLE balances CASCADE")
-//	if err != nil {
-//		t.Errorf("Failed to cleanup balances: %v", err)
-//	}
-//	_, err = db.Exec(ctx, "TRUNCATE TABLE accounts CASCADE")
-//	if err != nil {
-//		t.Errorf("Failed to cleanup accounts: %v", err)
-//	}
-//
-//	db.Close()
 //}
 //
-//func setupTestAccount(t interface{
+//func setupTestAccount(t interface {
 //	Helper()
 //	Errorf(format string, args ...interface{})
 //	FailNow()
@@ -388,18 +368,18 @@ func setupTestAccount(t *testing.T, db *pgxpool.Pool, accountID, userID string, 
 //	ctx := context.Background()
 //
 //	_, err := db.Exec(ctx, `
-//        INSERT INTO accounts (account_id, user_id, currency, created_at, updated_at)
-//        VALUES ($1, $2, 'USD', NOW(), NOW())
-//    `, accountID, userID)
+//       INSERT INTO accounts (account_id, user_id, currency, created_at, updated_at)
+//       VALUES ($1, $2, 'USD', NOW(), NOW())
+//   `, accountID, userID)
 //	if err != nil {
 //		t.Errorf("Failed to insert test account: %v", err)
 //		t.FailNow()
 //	}
 //
 //	_, err = db.Exec(ctx, `
-//        INSERT INTO balances (account_id, amount, last_updated)
-//        VALUES ($1, $2, NOW())
-//    `, accountID, initialBalance)
+//       INSERT INTO balances (account_id, amount, last_updated)
+//       VALUES ($1, $2, NOW())
+//   `, accountID, initialBalance)
 //	if err != nil {
 //		t.Errorf("Failed to insert test balance: %v", err)
 //		t.FailNow()
