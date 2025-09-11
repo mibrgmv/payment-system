@@ -13,6 +13,20 @@ services:
     networks:
       - account-network
 
+  account-postgres-test:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=bill_clinton
+      - POSTGRES_PASSWORD=2001
+      - POSTGRES_DB=account_service_test
+    ports:
+      - "5434:5432"
+    restart: unless-stopped
+    volumes:
+      - account-postgres-test-data:/var/lib/postgresql/data
+    networks:
+      - account-network
+
   transaction-postgres:
     image: postgres:latest
     environment:
@@ -40,6 +54,7 @@ services:
 
 volumes:
   account-postgres-data:
+  account-postgres-test-data:
   transaction-postgres-data:
 #  redis-data:
 

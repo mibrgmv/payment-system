@@ -37,3 +37,11 @@ create trigger accounts_updated_at_trigger
     before update on accounts
     for each row
     execute function update_updated_at();
+
+create table processed_events (
+    event_id varchar(255) primary key ,
+    account_id uuid not null,
+    processed_at timestamptz not null default now()
+);
+
+create index idx_processed_events_account_id on processed_events (account_id);
