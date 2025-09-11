@@ -117,20 +117,20 @@ func TestBalanceProcessor_ProcessBalanceChangeEvent_Idempotency(t *testing.T) {
 	expectedBalance := initialBalance + changeAmount
 	assert.Equal(t, float64(expectedBalance), balanceAfterFirst.Amount)
 
-	// Act: Process the same event again (simulate duplicate/retry)
+	// Act: Process the same event again
 	err = processor.ProcessBalanceChangeEvent(ctx, eventBytes)
 	assert.NoError(t, err)
 
-	// Verify: Balance should be the same (not doubled)
+	// Verify: Balance should be the same
 	balanceAfterSecond, err := balanceRepo.GetBalance(ctx, accountID)
 	require.NoError(t, err)
-	assert.Equal(t, expectedBalance, balanceAfterSecond.Amount)
+	assert.Equal(t, float64(expectedBalance), balanceAfterSecond.Amount)
 	assert.Equal(t, balanceAfterFirst.Amount, balanceAfterSecond.Amount)
 
 	// Verify: Event still marked as processed only once
 	var eventCount int
 	err = db.QueryRow(ctx,
-		"SELECT COUNT(*) FROM processed_events WHERE event_id = $1",
+		"select count(*) from processed_events where event_id = $1",
 		event.EventID).Scan(&eventCount)
 	require.NoError(t, err)
 	assert.Equal(t, 1, eventCount)
@@ -162,7 +162,7 @@ func TestBalanceProcessor_ProcessBalanceChangeEvent_AccountNotFound(t *testing.T
 	// Act: Process event for non-existent account
 	err = processor.ProcessBalanceChangeEvent(ctx, eventBytes)
 
-	// Should not return error (just log and continue)
+	// Should not return error
 	assert.NoError(t, err)
 
 	// Verify: Event should still be marked as processed
@@ -256,17 +256,13 @@ func TestBalanceProcessor_ProcessBalanceChangeEvent_MultipleEvents(t *testing.T)
 	}
 }
 
-// Helper functions for test setup
 func setupTestDB(t *testing.T) *pgxpool.Pool {
-	// Use the test database from docker-compose
 	dbURL := "postgres://bill_clinton:2001@localhost:5434/account_service_test?sslmode=disable"
-
 	db, err := pgxpool.New(context.Background(), dbURL)
 	require.NoError(t, err)
-
-	// Run migrations to set up schema
-	runMigrations(t, db)
-
+	migrationPath := "../migrations"
+	err = postgresshared.MigrateUp(db, migrationPath)
+	require.NoError(t, err)
 	return db
 }
 
@@ -283,27 +279,20 @@ func cleanupTestDB(t *testing.T, db *pgxpool.Pool) {
 	//db.Close()
 }
 
-func runMigrations(t *testing.T, db *pgxpool.Pool) {
-	migrationPath := "../migrations"
-
-	err := postgresshared.MigrateUp(db, migrationPath)
-	require.NoError(t, err)
-}
-
 func setupTestAccount(t *testing.T, db *pgxpool.Pool, accountID, userID string, initialBalance int64) {
 	ctx := context.Background()
 
 	// Insert test account
 	_, err := db.Exec(ctx, `
-        INSERT INTO accounts (account_id, user_id, currency, created_at, updated_at)
-        VALUES ($1, $2, 'USD', NOW(), NOW())
+        insert into accounts (account_id, user_id, currency, created_at, updated_at)
+        values ($1, $2, 'USD', now(), now())
     `, accountID, userID)
 	require.NoError(t, err)
 
 	// Insert initial balance
 	_, err = db.Exec(ctx, `
-        INSERT INTO balances (account_id, amount, last_updated)
-        VALUES ($1, $2, NOW())
+        insert into balances (account_id, amount, last_updated)
+        values ($1, $2, now())
     `, accountID, initialBalance)
 	require.NoError(t, err)
 }
