@@ -29,14 +29,13 @@ func (r *transactionRepo) BeginTx(ctx context.Context) (pgx.Tx, error) {
 func (r *transactionRepo) CreateTransactionTx(ctx context.Context, tx pgx.Tx, transaction *models.Transaction) error {
 	sql := `
         insert into transactions (
-            transaction_id, type, from_account_id, to_account_id, 
-            amount, currency, status, idempotency_key, error_message,
-            created_at, updated_at
-        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            type, from_account_id, to_account_id, 
+            amount, currency, status, idempotency_key, error_message
+        ) values ($1, $2, $3, $4, $5, $6, $7, $8)
+        returning transaction_id, created_at, updated_at
     `
 
-	_, err := tx.Exec(ctx, sql,
-		transaction.TransactionID,
+	err := tx.QueryRow(ctx, sql,
 		transaction.Type.String(),
 		transaction.FromAccountID,
 		transaction.ToAccountID,
@@ -45,8 +44,10 @@ func (r *transactionRepo) CreateTransactionTx(ctx context.Context, tx pgx.Tx, tr
 		transaction.Status.String(),
 		transaction.IdempotencyKey,
 		transaction.ErrorMessage,
-		transaction.CreatedAt,
-		transaction.UpdatedAt,
+	).Scan(
+		&transaction.TransactionID,
+		&transaction.CreatedAt,
+		&transaction.UpdatedAt,
 	)
 
 	if err != nil {

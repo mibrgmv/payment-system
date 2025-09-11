@@ -24,9 +24,30 @@ func NewTransactionServer(service service.TransactionService) transactionv1.Tran
 }
 
 func (s *transactionServer) CreateTransfer(ctx context.Context, req *transactionv1.CreateTransferRequest) (*transactionv1.Transaction, error) {
+	if req.FromAccountId == "" {
+		return nil, status.Error(codes.InvalidArgument, "from_account_id is required")
+	}
+	if _, err := uuid.Parse(req.FromAccountId); err != nil {
+		return nil, status.Error(codes.InvalidArgument, "from_account_id must be a valid UUID")
+	}
+	if req.ToAccountId == "" {
+		return nil, status.Error(codes.InvalidArgument, "to_account_id is required")
+	}
+	if _, err := uuid.Parse(req.ToAccountId); err != nil {
+		return nil, status.Error(codes.InvalidArgument, "to_account_id must be a valid UUID")
+	}
+	if req.FromAccountId == req.ToAccountId {
+		return nil, status.Error(codes.InvalidArgument, "cannot transfer to same account")
+	}
+	if req.Amount <= 0 {
+		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("amount must be greater than zero, got %v", req.Amount))
+	}
 	currency, err := models.CurrencyFromProto(req.Currency)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid currency: %v", err))
+	}
+	if req.IdempotencyKey == "" {
+		return nil, status.Error(codes.InvalidArgument, "idempotency_key is required")
 	}
 
 	transaction, err := s.service.CreateTransfer(
@@ -38,7 +59,16 @@ func (s *transactionServer) CreateTransfer(ctx context.Context, req *transaction
 		req.IdempotencyKey,
 	)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create transfer: %v", err))
+		switch {
+		case errors.Is(err, service.ErrInvalidTransaction):
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		case errors.Is(err, service.ErrIdempotencyConflict):
+			return nil, status.Error(codes.AlreadyExists, "transaction with this idempotency key already exists")
+		case errors.Is(err, service.ErrInsufficientFunds):
+			return nil, status.Error(codes.FailedPrecondition, "insufficient funds for transfer")
+		default:
+			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create transfer: %v", err))
+		}
 	}
 
 	return transaction.ToProto(), nil
@@ -84,9 +114,21 @@ func (s *transactionServer) CreateDeposit(ctx context.Context, req *transactionv
 }
 
 func (s *transactionServer) CreateWithdrawal(ctx context.Context, req *transactionv1.CreateWithdrawalRequest) (*transactionv1.Transaction, error) {
+	if req.FromAccountId == "" {
+		return nil, status.Error(codes.InvalidArgument, "from_account_id is required")
+	}
+	if _, err := uuid.Parse(req.FromAccountId); err != nil {
+		return nil, status.Error(codes.InvalidArgument, "from_account_id must be a valid UUID")
+	}
+	if req.Amount <= 0 {
+		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("amount must be greater than zero, got %v", req.Amount))
+	}
 	currency, err := models.CurrencyFromProto(req.Currency)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid currency: %v", err))
+	}
+	if req.IdempotencyKey == "" {
+		return nil, status.Error(codes.InvalidArgument, "idempotency_key is required")
 	}
 
 	transaction, err := s.service.CreateWithdrawal(
@@ -97,7 +139,16 @@ func (s *transactionServer) CreateWithdrawal(ctx context.Context, req *transacti
 		req.IdempotencyKey,
 	)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create withdrawal: %v", err))
+		switch {
+		case errors.Is(err, service.ErrInvalidTransaction):
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		case errors.Is(err, service.ErrIdempotencyConflict):
+			return nil, status.Error(codes.AlreadyExists, "transaction with this idempotency key already exists")
+		case errors.Is(err, service.ErrInsufficientFunds):
+			return nil, status.Error(codes.FailedPrecondition, "insufficient funds for withdrawal")
+		default:
+			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create withdrawal: %v", err))
+		}
 	}
 
 	return transaction.ToProto(), nil

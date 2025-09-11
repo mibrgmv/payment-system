@@ -4,9 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
-
-	"github.com/google/uuid"
 
 	"github.com/mibrgmv/payment-service/services/transaction/internal/repository"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/service/models"
@@ -45,18 +42,31 @@ func (s *transactionService) CreateTransfer(
 	currency models.Currency,
 	idempotencyKey string,
 ) (*models.Transaction, error) {
-	if fromAccountID == "" || toAccountID == "" {
-		return nil, fmt.Errorf("%w: both accounts must be specified", ErrInvalidTransaction)
-	}
 	if fromAccountID == toAccountID {
 		return nil, fmt.Errorf("%w: cannot transfer to same account", ErrInvalidTransaction)
 	}
-	if amount <= 0 {
-		return nil, fmt.Errorf("%w: amount must be positive", ErrInvalidTransaction)
+
+	tx, err := s.repo.BeginTx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	existing, err := s.repo.GetTransactionByIdempotencyKeyTx(ctx, tx, idempotencyKey)
+	if err != nil && !errors.Is(err, repository.ErrTransactionNotFound) {
+		return nil, fmt.Errorf("failed to check idempotency: %w", err)
+	}
+	if existing != nil {
+		if !s.isIdempotentTransferRequest(existing, fromAccountID, toAccountID, amount, currency) {
+			return nil, fmt.Errorf("%w: different transaction exists with key %s", ErrIdempotencyConflict, idempotencyKey)
+		}
+		if err := tx.Commit(ctx); err != nil {
+			return nil, fmt.Errorf("failed to commit transaction: %w", err)
+		}
+		return existing, nil
 	}
 
 	transaction := &models.Transaction{
-		TransactionID:  uuid.New().String(),
 		Type:           models.TransactionTypeTransfer,
 		FromAccountID:  &fromAccountID,
 		ToAccountID:    &toAccountID,
@@ -64,13 +74,15 @@ func (s *transactionService) CreateTransfer(
 		Currency:       currency,
 		Status:         models.TransactionStatusPending,
 		IdempotencyKey: idempotencyKey,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
 	}
 
-	//if err := s.repo.CreateTransaction(ctx, transaction); err != nil {
-	//	return nil, fmt.Errorf("failed to create transfer: %w", err)
-	//}
+	if err := s.repo.CreateTransactionTx(ctx, tx, transaction); err != nil {
+		return nil, fmt.Errorf("failed to create transfer: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
 
 	return transaction, nil
 }
@@ -93,7 +105,7 @@ func (s *transactionService) CreateDeposit(
 		return nil, fmt.Errorf("failed to check idempotency: %w", err)
 	}
 	if existing != nil {
-		if !s.isIdempotentRequest(existing, toAccountID, amount, currency, models.TransactionTypeDeposit) {
+		if !s.isIdempotentDepositRequest(existing, toAccountID, amount, currency) {
 			return nil, fmt.Errorf("%w: different transaction exists with key %s", ErrIdempotencyConflict, idempotencyKey)
 		}
 		if err := tx.Commit(ctx); err != nil {
@@ -103,19 +115,16 @@ func (s *transactionService) CreateDeposit(
 	}
 
 	transaction := &models.Transaction{
-		TransactionID:  uuid.New().String(),
 		Type:           models.TransactionTypeDeposit,
 		ToAccountID:    &toAccountID,
 		Amount:         amount,
 		Currency:       currency,
 		Status:         models.TransactionStatusPending,
 		IdempotencyKey: idempotencyKey,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
 	}
 
 	if err := s.repo.CreateTransactionTx(ctx, tx, transaction); err != nil {
-		return nil, fmt.Errorf("failed to create transaction: %w", err)
+		return nil, fmt.Errorf("failed to create deposit: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -132,28 +141,42 @@ func (s *transactionService) CreateWithdrawal(
 	currency models.Currency,
 	idempotencyKey string,
 ) (*models.Transaction, error) {
-	if fromAccountID == "" {
-		return nil, fmt.Errorf("%w: from account must be specified", ErrInvalidTransaction)
+	tx, err := s.repo.BeginTx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	if amount <= 0 {
-		return nil, fmt.Errorf("%w: amount must be positive", ErrInvalidTransaction)
+	defer tx.Rollback(ctx)
+
+	existing, err := s.repo.GetTransactionByIdempotencyKeyTx(ctx, tx, idempotencyKey)
+	if err != nil && !errors.Is(err, repository.ErrTransactionNotFound) {
+		return nil, fmt.Errorf("failed to check idempotency: %w", err)
+	}
+	if existing != nil {
+		if !s.isIdempotentWithdrawalRequest(existing, fromAccountID, amount, currency) {
+			return nil, fmt.Errorf("%w: different transaction exists with key %s", ErrIdempotencyConflict, idempotencyKey)
+		}
+		if err := tx.Commit(ctx); err != nil {
+			return nil, fmt.Errorf("failed to commit transaction: %w", err)
+		}
+		return existing, nil
 	}
 
 	transaction := &models.Transaction{
-		TransactionID:  uuid.New().String(),
 		Type:           models.TransactionTypeWithdrawal,
 		FromAccountID:  &fromAccountID,
 		Amount:         amount,
 		Currency:       currency,
 		Status:         models.TransactionStatusPending,
 		IdempotencyKey: idempotencyKey,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
 	}
 
-	//if err := s.repo.CreateTransaction(ctx, transaction); err != nil {
-	//	return nil, fmt.Errorf("failed to create withdrawal: %w", err)
-	//}
+	if err := s.repo.CreateTransactionTx(ctx, tx, transaction); err != nil {
+		return nil, fmt.Errorf("failed to create withdrawal: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
 
 	return transaction, nil
 }
@@ -177,8 +200,26 @@ func (s *transactionService) GetTransactionStatus(ctx context.Context, transacti
 	return s.repo.GetTransaction(ctx, transactionID)
 }
 
-func (s *transactionService) isIdempotentRequest(existingTransaction *models.Transaction, toAccountID string, amount float64, currency models.Currency, txType models.TransactionType) bool {
-	return existingTransaction.Type == txType &&
+func (s *transactionService) isIdempotentDepositRequest(existingTransaction *models.Transaction, toAccountID string, amount float64, currency models.Currency) bool {
+	return existingTransaction.Type == models.TransactionTypeDeposit &&
+		existingTransaction.ToAccountID != nil &&
+		*existingTransaction.ToAccountID == toAccountID &&
+		existingTransaction.Amount == amount &&
+		existingTransaction.Currency == currency
+}
+
+func (s *transactionService) isIdempotentWithdrawalRequest(existingTransaction *models.Transaction, fromAccountID string, amount float64, currency models.Currency) bool {
+	return existingTransaction.Type == models.TransactionTypeWithdrawal &&
+		existingTransaction.FromAccountID != nil &&
+		*existingTransaction.FromAccountID == fromAccountID &&
+		existingTransaction.Amount == amount &&
+		existingTransaction.Currency == currency
+}
+
+func (s *transactionService) isIdempotentTransferRequest(existingTransaction *models.Transaction, fromAccountID, toAccountID string, amount float64, currency models.Currency) bool {
+	return existingTransaction.Type == models.TransactionTypeTransfer &&
+		existingTransaction.FromAccountID != nil &&
+		*existingTransaction.FromAccountID == fromAccountID &&
 		existingTransaction.ToAccountID != nil &&
 		*existingTransaction.ToAccountID == toAccountID &&
 		existingTransaction.Amount == amount &&
