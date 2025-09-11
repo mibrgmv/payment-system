@@ -12,11 +12,11 @@ import (
 )
 
 type eventTrackingRepo struct {
-	db *pgxpool.Pool
+	pool *pgxpool.Pool
 }
 
-func NewEventTrackingRepository(db *pgxpool.Pool) repository.EventTrackingRepository {
-	return &eventTrackingRepo{db: db}
+func NewEventTrackingRepository(pool *pgxpool.Pool) repository.EventTrackingRepository {
+	return &eventTrackingRepo{pool: pool}
 }
 
 func (r *eventTrackingRepo) MarkEventProcessed(ctx context.Context, tx pgx.Tx, eventID string, accountID string) error {
@@ -43,7 +43,7 @@ func (r *eventTrackingRepo) IsEventProcessed(ctx context.Context, eventID string
     `
 
 	var exists bool
-	err := r.db.QueryRow(ctx, sql, eventID).Scan(&exists)
+	err := r.pool.QueryRow(ctx, sql, eventID).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("failed to check if event is processed: %w", err)
 	}
