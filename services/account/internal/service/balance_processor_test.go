@@ -17,11 +17,9 @@ import (
 )
 
 func TestBalanceProcessor_ProcessBalanceChangeEvent_Success(t *testing.T) {
-	// Setup test database connection
 	pool := setupTestPostgres(t)
 	defer dropTestPostgres(t, pool)
 
-	// Create repositories
 	balanceRepo := postgres.NewBalanceRepository(pool)
 	eventTrackingRepo := postgres.NewEventTrackingRepository(pool)
 	processor := service.NewBalanceProcessor(balanceRepo, eventTrackingRepo, pool)
@@ -71,7 +69,7 @@ func TestBalanceProcessor_ProcessBalanceChangeEvent_Success(t *testing.T) {
 	// Verify: Event exists in processed_events table
 	var eventExists bool
 	err = pool.QueryRow(ctx,
-		"SELECT EXISTS(SELECT 1 FROM processed_events WHERE event_id = $1 AND account_id = $2)",
+		"select exists(select 1 from processed_events where event_id = $1 and account_id = $2)",
 		event.EventID, accountID).Scan(&eventExists)
 	require.NoError(t, err)
 	assert.True(t, eventExists)
@@ -256,12 +254,17 @@ func TestBalanceProcessor_ProcessBalanceChangeEvent_MultipleEvents(t *testing.T)
 }
 
 func setupTestPostgres(t *testing.T) *pgxpool.Pool {
-	connString := "postgres://bill_clinton:2001@localhost:5434/account_service_test?sslmode=disable"
-	pool, err := pgxpool.New(context.Background(), connString)
+	var config testConfig
+	err := LoadTest(&config)
 	require.NoError(t, err)
+
+	pool, err := pgxpool.New(context.Background(), config.Postgres.ConnectionString())
+	require.NoError(t, err)
+
 	migrationPath := "../migrations"
 	err = postgresshared.MigrateUp(pool, migrationPath)
 	require.NoError(t, err)
+
 	return pool
 }
 
@@ -277,12 +280,12 @@ func setupTestAccount(t *testing.T, pool *pgxpool.Pool, accountID, userID string
 	_, err := pool.Exec(ctx, `
        insert into accounts (account_id, user_id, currency, created_at, updated_at)
        values ($1, $2, 'USD', now(), now())
-   `, accountID, userID)
+   	`, accountID, userID)
 	require.NoError(t, err)
 
 	_, err = pool.Exec(ctx, `
-       insert into balances (account_id, amount, last_updated)
+		insert into balances (account_id, amount, last_updated)
        values ($1, $2, now())
-   `, accountID, initialBalance)
+   	`, accountID, initialBalance)
 	require.NoError(t, err)
 }

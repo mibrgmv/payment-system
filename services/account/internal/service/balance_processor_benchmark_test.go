@@ -3,14 +3,19 @@ package service_test
 import (
 	"context"
 	"encoding/json"
+	"log"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository/postgres"
 	"github.com/mibrgmv/payment-service/services/account/internal/service"
 	"github.com/mibrgmv/payment-service/services/account/internal/service/models"
+	"github.com/mibrgmv/payment-service/shared/env"
+	"github.com/mibrgmv/payment-service/shared/loader"
 	postgresshared "github.com/mibrgmv/payment-service/shared/postgres"
 )
 
@@ -49,9 +54,14 @@ func setupBenchmarkPostgres(t interface {
 }) *pgxpool.Pool {
 	t.Helper()
 
-	connString := "postgres://bill_clinton:2001@localhost:5434/account_service_test?sslmode=disable"
+	var config testConfig
+	err := LoadTest(&config)
+	if err != nil {
+		t.Errorf("Failed to load test config: %v", err)
+		t.FailNow()
+	}
 
-	pool, err := pgxpool.New(context.Background(), connString)
+	pool, err := pgxpool.New(context.Background(), config.Postgres.ConnectionString())
 	if err != nil {
 		t.Errorf("Failed to connect to test database: %v", err)
 		t.FailNow()
@@ -92,20 +102,40 @@ func setupBenchmarkAccount(t interface {
 	ctx := context.Background()
 
 	_, err := pool.Exec(ctx, `
-      insert into accounts (account_id, user_id, currency, created_at, updated_at)
-      values ($1, $2, 'USD', now(), now())
-  `, accountID, userID)
+		insert into accounts (account_id, user_id, currency, created_at, updated_at)
+    	values ($1, $2, 'USD', now(), now())
+  	`, accountID, userID)
 	if err != nil {
 		t.Errorf("Failed to insert test account: %v", err)
 		t.FailNow()
 	}
 
 	_, err = pool.Exec(ctx, `
-      insert into balances (account_id, amount, last_updated)
-      values ($1, $2, now())
-  `, accountID, initialBalance)
+        insert into balances (account_id, amount, last_updated)
+        values ($1, $2, now())
+  	`, accountID, initialBalance)
 	if err != nil {
 		t.Errorf("Failed to insert test balance: %v", err)
 		t.FailNow()
 	}
+}
+
+type testConfig struct {
+	Postgres postgresshared.Config `yaml:"postgres-test"`
+}
+
+func LoadTest(config *testConfig) error {
+	yamlPath := filepath.Join("..", "config", "test.yaml")
+	if err := loader.Load(config, yamlPath); err != nil {
+		return err
+	}
+
+	envPath := filepath.Join("..", "..", "..", "..", ".env")
+	if err := godotenv.Load(envPath); err != nil {
+		log.Printf("no .env file found: %v", err)
+	}
+
+	config.Postgres.Username = env.GetString("ACCOUNT_SERVICE_POSTGRES_USERNAME_TEST", config.Postgres.Username)
+	config.Postgres.Password = env.GetString("ACCOUNT_SERVICE_POSTGRES_PASSWORD_TEST", config.Postgres.Password)
+	return nil
 }
