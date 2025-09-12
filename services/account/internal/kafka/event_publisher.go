@@ -1,4 +1,4 @@
-package service
+package kafka
 
 import (
 	"context"
@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/mibrgmv/payment-service/services/account/internal/kafka"
+	"github.com/mibrgmv/payment-service/services/account/internal/kafka/models"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
-	"github.com/mibrgmv/payment-service/services/account/internal/service/models"
+	"github.com/mibrgmv/payment-service/shared/kafka"
 )
 
 type EventPublisher struct {

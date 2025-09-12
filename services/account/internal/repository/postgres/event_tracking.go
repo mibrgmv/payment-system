@@ -19,7 +19,11 @@ func NewEventTrackingRepository(pool *pgxpool.Pool) repository.EventTrackingRepo
 	return &eventTrackingRepo{pool: pool}
 }
 
-func (r *eventTrackingRepo) MarkEventProcessed(ctx context.Context, tx pgx.Tx, eventID string, accountID string) error {
+func (r *eventTrackingRepo) BeginTx(ctx context.Context) (pgx.Tx, error) {
+	return r.pool.Begin(ctx)
+}
+
+func (r *eventTrackingRepo) MarkEventProcessedTx(ctx context.Context, tx pgx.Tx, eventID string, accountID string) error {
 	sql := `
 	insert into processed_events (event_id, account_id)
 	values ($1, $2)
