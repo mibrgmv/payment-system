@@ -9,19 +9,23 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/mibrgmv/payment-service/services/account/internal/kafka/events"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
-	"github.com/mibrgmv/payment-service/shared/kafka"
 	"github.com/mibrgmv/payment-service/shared/postgres"
 )
 
+type Producer interface {
+	Produce(ctx context.Context, topic string, key string, value interface{}) error
+	Close() error
+}
+
 type EventPublisher struct {
 	outboxRepo    repository.OutboxRepository
-	kafkaProducer *kafka.Producer
+	kafkaProducer Producer
 	db            *postgres.DB
 }
 
 func NewEventPublisher(
 	outboxRepo repository.OutboxRepository,
-	kafkaProducer *kafka.Producer,
+	kafkaProducer Producer,
 	db *postgres.DB,
 ) *EventPublisher {
 	return &EventPublisher{
@@ -78,9 +82,26 @@ func (p *EventPublisher) ProcessOutboxBatch(ctx context.Context) error {
 		return nil
 	}
 
+	workerCount := 10
+	jobs := make(chan events.OutboxEvent, len(pending))
+	results := make(chan error, len(pending))
+
+	for w := 0; w < workerCount; w++ {
+		go func() {
+			for event := range jobs {
+				results <- p.ProcessSingleEvent(ctx, event)
+			}
+		}()
+	}
+
 	for _, event := range pending {
-		if err := p.ProcessSingleEvent(ctx, event); err != nil {
-			log.Printf("Failed to process event %s: %v", event.EventID, err)
+		jobs <- event
+	}
+	close(jobs)
+
+	for i := 0; i < len(pending); i++ {
+		if err := <-results; err != nil {
+			log.Printf("Failed to process event: %v", err)
 		}
 	}
 
@@ -94,7 +115,6 @@ func (p *EventPublisher) ProcessSingleEvent(ctx context.Context, event events.Ou
 		if err != nil {
 			return fmt.Errorf("failed to lock event: %w", err)
 		}
-
 		if lockedEvent == nil {
 			return nil
 		}
