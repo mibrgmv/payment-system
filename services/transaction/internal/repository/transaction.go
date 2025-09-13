@@ -20,5 +20,5 @@ type TransactionRepository interface {
 	GetTransactionByIdempotencyKeyTx(ctx context.Context, tx pgx.Tx, idempotencyKey string) (*models.Transaction, error)
 	ListTransactions(ctx context.Context, filters models.TransactionFilters, pageSize int32, pageToken string) ([]*models.Transaction, string, error)
 	UpdateTransactionStatus(ctx context.Context, transactionID string, status models.TransactionStatus, errorMessage *string) error
-	CancelTransaction(ctx context.Context, transactionID string) error
+	UpdateTransactionStatusTx(ctx context.Context, tx pgx.Tx, transactionID string, status models.TransactionStatus, errorMessage *string) error
 }

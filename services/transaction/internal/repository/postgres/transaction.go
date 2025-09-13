@@ -12,6 +12,7 @@ import (
 	"github.com/mibrgmv/payment-service/services/transaction/internal/repository"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/service/models"
 	"github.com/mibrgmv/payment-service/shared/pagination"
+	"github.com/mibrgmv/payment-service/shared/postgres"
 )
 
 type transactionRepo struct {
@@ -198,13 +199,21 @@ func (r *transactionRepo) ListTransactions(
 }
 
 func (r *transactionRepo) UpdateTransactionStatus(ctx context.Context, transactionID string, status models.TransactionStatus, errorMessage *string) error {
+	return r.updateTransactionStatus(ctx, r.pool, transactionID, status, errorMessage)
+}
+
+func (r *transactionRepo) UpdateTransactionStatusTx(ctx context.Context, tx pgx.Tx, transactionID string, status models.TransactionStatus, errorMessage *string) error {
+	return r.updateTransactionStatus(ctx, tx, transactionID, status, errorMessage)
+}
+
+func (r *transactionRepo) updateTransactionStatus(ctx context.Context, querier postgres.Querier, transactionID string, status models.TransactionStatus, errorMessage *string) error {
 	sql := `
-	update transactions 
-	set status = $1, error_message = $2, updated_at = now()
-	where transaction_id = $3
+		update transactions 
+		set status = $1, error_message = $2, updated_at = now()
+		where transaction_id = $3
 	`
 
-	result, err := r.pool.Exec(ctx, sql, status.String(), errorMessage, transactionID)
+	result, err := querier.Exec(ctx, sql, status.String(), errorMessage, transactionID)
 	if err != nil {
 		return err
 	}
@@ -216,43 +225,14 @@ func (r *transactionRepo) UpdateTransactionStatus(ctx context.Context, transacti
 	return nil
 }
 
-func (r *transactionRepo) CancelTransaction(ctx context.Context, transactionID string) error {
-	sql := `
-	update transactions 
-	set status = 'cancelled', updated_at = now()
-	where transaction_id = $1 and status in ('pending', 'processing')
-	`
-
-	result, err := r.pool.Exec(ctx, sql, transactionID)
-	if err != nil {
-		return err
-	}
-
-	if result.RowsAffected() == 0 {
-		return repository.ErrTransactionNotFound
-	}
-
-	return nil
-}
-
-func (r *transactionRepo) scanTransaction(ctx context.Context, querier interface{}, query string, args ...interface{}) (*models.Transaction, error) {
+func (r *transactionRepo) scanTransaction(ctx context.Context, querier postgres.Querier, query string, args ...interface{}) (*models.Transaction, error) {
 	var transaction models.Transaction
 	var typeStr, currencyStr, statusStr string
 	var fromAccountID, toAccountID *string
 	var errorMessage *string
 	var completedAt *time.Time
 
-	var row pgx.Row
-	switch q := querier.(type) {
-	case *pgxpool.Pool:
-		row = q.QueryRow(ctx, query, args...)
-	case pgx.Tx:
-		row = q.QueryRow(ctx, query, args...)
-	default:
-		return nil, fmt.Errorf("unsupported querier type")
-	}
-
-	err := row.Scan(
+	err := querier.QueryRow(ctx, query, args...).Scan(
 		&transaction.TransactionID,
 		&typeStr,
 		&fromAccountID,

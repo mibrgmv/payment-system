@@ -10,6 +10,7 @@ import (
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
 	"github.com/mibrgmv/payment-service/services/account/internal/service/models"
 	"github.com/mibrgmv/payment-service/shared/pagination"
+	"github.com/mibrgmv/payment-service/shared/postgres"
 )
 
 type accountRepo struct {
@@ -54,11 +55,15 @@ func (r *accountRepo) CreateAccount(ctx context.Context, userID string, currency
 	return accountID, nil
 }
 
-func (r *accountRepo) GetAccount(ctx context.Context, accountID string) (*models.Account, error) {
+func (r *accountRepo) getAccount(
+	ctx context.Context,
+	querier postgres.Querier,
+	accountID string,
+) (*models.Account, error) {
 	var account models.Account
 	var currencyStr string
 
-	err := r.pool.QueryRow(ctx, `
+	err := querier.QueryRow(ctx, `
 		select account_id, user_id, currency, created_at, updated_at 
 		from accounts 
 		where account_id = $1
@@ -74,16 +79,36 @@ func (r *accountRepo) GetAccount(ctx context.Context, accountID string) (*models
 		return nil, repository.ErrAccountNotFound
 	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get account: %w", err)
 	}
 
 	currency, err := models.CurrencyFromString(currencyStr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid currency in database: %w", err)
 	}
 	account.Currency = currency
 
 	return &account, nil
+}
+
+func (r *accountRepo) GetAccount(ctx context.Context, accountID string) (*models.Account, error) {
+	return r.getAccount(ctx, r.pool, accountID)
+}
+
+func (r *accountRepo) GetAccountTx(ctx context.Context, tx pgx.Tx, accountID string) (*models.Account, error) {
+	return r.getAccount(ctx, tx, accountID)
+}
+
+func (r *accountRepo) AccountExistsTx(ctx context.Context, tx pgx.Tx, accountID string) (bool, error) {
+	query := `select exists (select 1 from accounts where account_id = $1)`
+
+	var exists bool
+	err := tx.QueryRow(ctx, query, accountID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check if account exists: %w", err)
+	}
+
+	return exists, nil
 }
 
 func (r *accountRepo) ListAccounts(

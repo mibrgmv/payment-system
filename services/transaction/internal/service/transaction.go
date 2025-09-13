@@ -190,7 +190,7 @@ func (s *transactionService) ListTransactions(ctx context.Context, filters model
 }
 
 func (s *transactionService) CancelTransaction(ctx context.Context, transactionID string) (*models.Transaction, error) {
-	if err := s.repo.CancelTransaction(ctx, transactionID); err != nil {
+	if err := s.repo.UpdateTransactionStatus(ctx, transactionID, models.TransactionStatusCancelled, nil); err != nil {
 		return nil, err
 	}
 	return s.repo.GetTransaction(ctx, transactionID)

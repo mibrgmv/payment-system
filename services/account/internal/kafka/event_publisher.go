@@ -6,20 +6,28 @@ import (
 	"log"
 	"time"
 
-	"github.com/mibrgmv/payment-service/services/account/internal/kafka/models"
+	"github.com/jackc/pgx/v5"
+	"github.com/mibrgmv/payment-service/services/account/internal/kafka/events"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
 	"github.com/mibrgmv/payment-service/shared/kafka"
+	"github.com/mibrgmv/payment-service/shared/postgres"
 )
 
 type EventPublisher struct {
 	outboxRepo    repository.OutboxRepository
 	kafkaProducer *kafka.Producer
+	db            *postgres.DB
 }
 
-func NewEventPublisher(outboxRepo repository.OutboxRepository, kafkaProducer *kafka.Producer) *EventPublisher {
+func NewEventPublisher(
+	outboxRepo repository.OutboxRepository,
+	kafkaProducer *kafka.Producer,
+	db *postgres.DB,
+) *EventPublisher {
 	return &EventPublisher{
 		outboxRepo:    outboxRepo,
 		kafkaProducer: kafkaProducer,
+		db:            db,
 	}
 }
 
@@ -37,7 +45,7 @@ func (p *EventPublisher) publishLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if err := p.processOutboxBatch(ctx); err != nil {
+			if err := p.ProcessOutboxBatch(ctx); err != nil {
 				log.Printf("Error processing outbox batch: %v", err)
 			}
 		}
@@ -60,76 +68,67 @@ func (p *EventPublisher) cleanupLoop(ctx context.Context) {
 	}
 }
 
-func (p *EventPublisher) processOutboxBatch(ctx context.Context) error {
-	tx, err := p.outboxRepo.BeginTx(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
-
-	events, err := p.outboxRepo.GetPendingEventsForUpdateTx(ctx, tx, 100)
+func (p *EventPublisher) ProcessOutboxBatch(ctx context.Context) error {
+	pending, err := p.outboxRepo.GetPendingEvents(ctx, 100)
 	if err != nil {
 		return fmt.Errorf("failed to get pending events: %w", err)
 	}
 
-	if len(events) == 0 {
+	if len(pending) == 0 {
 		return nil
 	}
 
-	// Process each event
-	var processedEvents []string
-	var failedEvents []struct {
-		eventID string
-		err     error
-	}
-
-	for _, event := range events {
-		if err := p.publishEvent(ctx, event); err != nil {
-			failedEvents = append(failedEvents, struct {
-				eventID string
-				err     error
-			}{event.EventID, err})
-			log.Printf("Failed to publish event %s: %v", event.EventID, err)
-		} else {
-			processedEvents = append(processedEvents, event.EventID)
+	for _, event := range pending {
+		if err := p.ProcessSingleEvent(ctx, event); err != nil {
+			log.Printf("Failed to process event %s: %v", event.EventID, err)
 		}
 	}
 
-	for _, eventID := range processedEvents {
-		if err := p.outboxRepo.MarkEventAsPublishedTx(ctx, tx, eventID); err != nil {
-			return fmt.Errorf("failed to mark event %s as published: %w", eventID, err)
-		}
-	}
-
-	for _, failed := range failedEvents {
-		if err := p.outboxRepo.MarkEventAsFailedTx(ctx, tx, failed.eventID, failed.err.Error()); err != nil {
-			return fmt.Errorf("failed to mark event %s as failed: %w", failed.eventID, err)
-		}
-	}
-
-	return tx.Commit(ctx)
+	log.Printf("Processed %d events from outbox", len(pending))
+	return nil
 }
 
-func (p *EventPublisher) publishEvent(ctx context.Context, event models.OutboxEvent) error {
-	switch event.EventType {
-	case "account_created":
-		var payload models.AccountCreatedEvent
-		if err := event.UnmarshalPayload(&payload); err != nil {
-			return fmt.Errorf("failed to unmarshal account created event: %w", err)
+func (p *EventPublisher) ProcessSingleEvent(ctx context.Context, event events.OutboxEvent) error {
+	err := p.db.WithTransaction(ctx, func(tx pgx.Tx) error {
+		lockedEvent, err := p.outboxRepo.LockEventForProcessing(ctx, tx, event.EventID)
+		if err != nil {
+			return fmt.Errorf("failed to lock event: %w", err)
 		}
-		return p.kafkaProducer.Produce(ctx, event.Topic, event.EventID, payload)
 
+		if lockedEvent == nil {
+			return nil
+		}
+
+		if err := p.publishEvent(ctx, *lockedEvent); err != nil {
+			if markErr := p.outboxRepo.MarkEventAsFailedTx(ctx, tx, event.EventID, err.Error()); markErr != nil {
+				return fmt.Errorf("failed to mark event as failed: %w", markErr)
+			}
+			return err
+		}
+
+		return p.outboxRepo.MarkEventAsPublishedTx(ctx, tx, event.EventID)
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to process event %s: %w", event.EventID, err)
+	}
+
+	return nil
+}
+
+func (p *EventPublisher) publishEvent(ctx context.Context, event events.OutboxEvent) error {
+	switch event.EventType {
 	case "balance_updated":
-		var payload models.BalanceUpdatedEvent
+		var payload events.BalanceUpdated
 		if err := event.UnmarshalPayload(&payload); err != nil {
 			return fmt.Errorf("failed to unmarshal balance updated event: %w", err)
 		}
 		return p.kafkaProducer.Produce(ctx, event.Topic, event.EventID, payload)
 
-	case "insufficient_funds":
-		var payload models.InsufficientFundsEvent
+	case "transaction_result":
+		var payload events.TransactionResult
 		if err := event.UnmarshalPayload(&payload); err != nil {
-			return fmt.Errorf("failed to unmarshal insufficient funds event: %w", err)
+			return fmt.Errorf("failed to unmarshal transaction result event: %w", err)
 		}
 		return p.kafkaProducer.Produce(ctx, event.Topic, event.EventID, payload)
 

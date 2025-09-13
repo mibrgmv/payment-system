@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
 	"github.com/mibrgmv/payment-service/services/account/internal/service/models"
+	"github.com/mibrgmv/payment-service/shared/postgres"
 )
 
 type balanceRepo struct {
@@ -19,11 +20,15 @@ func NewBalanceRepository(pool *pgxpool.Pool) repository.BalanceRepository {
 	return &balanceRepo{pool: pool}
 }
 
-func (r *balanceRepo) GetBalance(ctx context.Context, accountID string) (*models.Balance, error) {
+func (r *balanceRepo) getBalance(
+	ctx context.Context,
+	querier postgres.Querier,
+	accountID string,
+) (*models.Balance, error) {
 	var balance models.Balance
 	var currencyStr string
 
-	err := r.pool.QueryRow(ctx, `
+	err := querier.QueryRow(ctx, `
 		select b.account_id, b.amount, a.currency, b.last_updated 
 		from balances b
 		join accounts a on b.account_id = a.account_id 
@@ -51,7 +56,15 @@ func (r *balanceRepo) GetBalance(ctx context.Context, accountID string) (*models
 	return &balance, nil
 }
 
-func (r *balanceRepo) UpdateBalanceTx(ctx context.Context, tx pgx.Tx, accountID string, amount int64) (*models.Balance, error) {
+func (r *balanceRepo) GetBalance(ctx context.Context, accountID string) (*models.Balance, error) {
+	return r.getBalance(ctx, r.pool, accountID)
+}
+
+func (r *balanceRepo) GetBalanceTx(ctx context.Context, tx pgx.Tx, accountID string) (*models.Balance, error) {
+	return r.getBalance(ctx, tx, accountID)
+}
+
+func (r *balanceRepo) UpdateBalanceTx(ctx context.Context, tx pgx.Tx, accountID string, amount float64) (*models.Balance, error) {
 	var balance models.Balance
 	var currencyStr string
 
@@ -71,7 +84,7 @@ func (r *balanceRepo) UpdateBalanceTx(ctx context.Context, tx pgx.Tx, accountID 
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		var currentBalance int64
+		var currentBalance float64
 		checkErr := tx.QueryRow(ctx, `
             select amount from balances where account_id = $1
         `, accountID).Scan(&currentBalance)

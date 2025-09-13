@@ -7,8 +7,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/mibrgmv/payment-service/services/account/internal/kafka/events"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
-	"github.com/mibrgmv/payment-service/services/account/internal/service/models"
 )
 
 type outboxRepo struct {
@@ -19,11 +19,7 @@ func NewOutboxRepository(pool *pgxpool.Pool) repository.OutboxRepository {
 	return &outboxRepo{pool: pool}
 }
 
-func (r *outboxRepo) BeginTx(ctx context.Context) (pgx.Tx, error) {
-	return r.pool.Begin(ctx)
-}
-
-func (r *outboxRepo) AddToOutboxTx(ctx context.Context, tx pgx.Tx, event models.OutboxEvent) error {
+func (r *outboxRepo) AddToOutboxTx(ctx context.Context, tx pgx.Tx, event events.OutboxEvent) error {
 	eventBytes, err := json.Marshal(event.Payload)
 	if err != nil {
 		return fmt.Errorf("failed to marshal event payload: %w", err)
@@ -52,25 +48,24 @@ func (r *outboxRepo) AddToOutboxTx(ctx context.Context, tx pgx.Tx, event models.
 	return err
 }
 
-func (r *outboxRepo) GetPendingEventsForUpdateTx(ctx context.Context, tx pgx.Tx, limit int) ([]models.OutboxEvent, error) {
+func (r *outboxRepo) GetPendingEvents(ctx context.Context, limit int) ([]events.OutboxEvent, error) {
 	query := `
 		select event_id, event_type, payload, created_at, topic
 		from outbox_events 
 		where status = 'pending' 
 		order by created_at 
 		limit $1
-		for update skip locked
 	`
 
-	rows, err := tx.Query(ctx, query, limit)
+	rows, err := r.pool.Query(ctx, query, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query pending events: %w", err)
 	}
 	defer rows.Close()
 
-	var events []models.OutboxEvent
+	var eventsArr []events.OutboxEvent
 	for rows.Next() {
-		var event models.OutboxEvent
+		var event events.OutboxEvent
 		var payloadBytes []byte
 
 		err := rows.Scan(&event.EventID, &event.EventType, &payloadBytes, &event.CreatedAt, &event.Topic)
@@ -78,29 +73,63 @@ func (r *outboxRepo) GetPendingEventsForUpdateTx(ctx context.Context, tx pgx.Tx,
 			return nil, fmt.Errorf("failed to scan outbox event: %w", err)
 		}
 
-		//switch event.EventType {
-		//case "account_created":
-		//	var payload models.AccountCreatedEvent
-		//	if err := json.Unmarshal(payloadBytes, &payload); err == nil {
-		//		event.Payload = payload
-		//	}
-		//case "balance_updated":
-		//	var payload models.BalanceUpdatedEvent
-		//	if err := json.Unmarshal(payloadBytes, &payload); err == nil {
-		//		event.Payload = payload
-		//	}
-		//case "insufficient_funds":
-		//	var payload models.InsufficientFundsEvent
-		//	if err := json.Unmarshal(payloadBytes, &payload); err == nil {
-		//		event.Payload = payload
-		//	}
-		//}
+		switch event.EventType {
+		case "balance_updated":
+			var payload events.BalanceUpdated
+			if err := json.Unmarshal(payloadBytes, &payload); err == nil {
+				event.Payload = payload
+			}
+		case "transaction_result":
+			var payload events.TransactionResult
+			if err := json.Unmarshal(payloadBytes, &payload); err == nil {
+				event.Payload = payload
+			}
+		}
 
 		event.Payload = payloadBytes
-		events = append(events, event)
+		eventsArr = append(eventsArr, event)
 	}
 
-	return events, nil
+	return eventsArr, nil
+}
+
+func (r *outboxRepo) LockEventForProcessing(ctx context.Context, tx pgx.Tx, eventID string) (*events.OutboxEvent, error) {
+	query := `
+		select event_id, event_type, payload, created_at, topic
+		from outbox_events 
+		where event_id = $1 and status = 'pending'
+		for update skip locked
+	`
+
+	var event events.OutboxEvent
+	var payloadBytes []byte
+
+	err := tx.QueryRow(ctx, query, eventID).Scan(
+		&event.EventID,
+		&event.EventType,
+		&payloadBytes,
+		&event.CreatedAt,
+		&event.Topic,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan outbox event: %w", err)
+	}
+
+	switch event.EventType {
+	case "balance_updated":
+		var payload events.BalanceUpdated
+		if err := json.Unmarshal(payloadBytes, &payload); err == nil {
+			event.Payload = payload
+		}
+	case "transaction_result":
+		var payload events.TransactionResult
+		if err := json.Unmarshal(payloadBytes, &payload); err == nil {
+			event.Payload = payload
+		}
+	}
+
+	event.Payload = payloadBytes
+	return &event, nil
 }
 
 func (r *outboxRepo) MarkEventAsPublishedTx(ctx context.Context, tx pgx.Tx, eventID string) error {

@@ -12,7 +12,7 @@ var (
 )
 
 type EventTrackingRepository interface {
-	BeginTx(ctx context.Context) (pgx.Tx, error)
-	MarkEventProcessedTx(ctx context.Context, tx pgx.Tx, eventID string, accountID string) error
+	MarkEventProcessedTx(ctx context.Context, tx pgx.Tx, eventID, eventType string) error
 	IsEventProcessed(ctx context.Context, eventID string) (bool, error)
+	CleanupOldEvents(ctx context.Context, olderThanDays int) error
 }

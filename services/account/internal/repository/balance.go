@@ -15,5 +15,6 @@ var (
 
 type BalanceRepository interface {
 	GetBalance(ctx context.Context, accountID string) (*models.Balance, error)
-	UpdateBalanceTx(ctx context.Context, tx pgx.Tx, accountID string, amount int64) (*models.Balance, error)
+	GetBalanceTx(ctx context.Context, tx pgx.Tx, accountID string) (*models.Balance, error)
+	UpdateBalanceTx(ctx context.Context, tx pgx.Tx, accountID string, amount float64) (*models.Balance, error)
 }
