@@ -4,7 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/mibrgmv/payment-service/services/transaction/internal/kafka/events"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/repository"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/service/models"
 )
@@ -25,14 +29,22 @@ type TransactionService interface {
 	ListTransactions(ctx context.Context, filters models.TransactionFilters, pageSize int32, pageToken string) ([]*models.Transaction, string, error)
 	CancelTransaction(ctx context.Context, transactionID string) (*models.Transaction, error)
 	GetTransactionStatus(ctx context.Context, transactionID string) (*models.Transaction, error)
+	HandleTransactionResult(ctx context.Context, tx pgx.Tx, event events.TransactionResult) error
 }
 
 type transactionService struct {
-	repo repository.TransactionRepository
+	transactionRepo repository.TransactionRepository
+	outboxRepo      repository.OutboxRepository
 }
 
-func NewTransactionService(repo repository.TransactionRepository) TransactionService {
-	return &transactionService{repo: repo}
+func NewTransactionService(
+	transactionRepo repository.TransactionRepository,
+	outboxRepo repository.OutboxRepository,
+) TransactionService {
+	return &transactionService{
+		transactionRepo: transactionRepo,
+		outboxRepo:      outboxRepo,
+	}
 }
 
 func (s *transactionService) CreateTransfer(
@@ -46,13 +58,13 @@ func (s *transactionService) CreateTransfer(
 		return nil, fmt.Errorf("%w: cannot transfer to same account", ErrInvalidTransaction)
 	}
 
-	tx, err := s.repo.BeginTx(ctx)
+	tx, err := s.transactionRepo.BeginTx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	existing, err := s.repo.GetTransactionByIdempotencyKeyTx(ctx, tx, idempotencyKey)
+	existing, err := s.transactionRepo.GetTransactionByIdempotencyKeyTx(ctx, tx, idempotencyKey)
 	if err != nil && !errors.Is(err, repository.ErrTransactionNotFound) {
 		return nil, fmt.Errorf("failed to check idempotency: %w", err)
 	}
@@ -76,8 +88,12 @@ func (s *transactionService) CreateTransfer(
 		IdempotencyKey: idempotencyKey,
 	}
 
-	if err := s.repo.CreateTransactionTx(ctx, tx, transaction); err != nil {
+	if err := s.transactionRepo.CreateTransactionTx(ctx, tx, transaction); err != nil {
 		return nil, fmt.Errorf("failed to create transfer: %w", err)
+	}
+
+	if err := s.publishTransactionCreated(ctx, tx, transaction); err != nil {
+		return nil, fmt.Errorf("failed to publish transaction event: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -94,13 +110,13 @@ func (s *transactionService) CreateDeposit(
 	currency models.Currency,
 	idempotencyKey string,
 ) (*models.Transaction, error) {
-	tx, err := s.repo.BeginTx(ctx)
+	tx, err := s.transactionRepo.BeginTx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	existing, err := s.repo.GetTransactionByIdempotencyKeyTx(ctx, tx, idempotencyKey)
+	existing, err := s.transactionRepo.GetTransactionByIdempotencyKeyTx(ctx, tx, idempotencyKey)
 	if err != nil && !errors.Is(err, repository.ErrTransactionNotFound) {
 		return nil, fmt.Errorf("failed to check idempotency: %w", err)
 	}
@@ -123,8 +139,12 @@ func (s *transactionService) CreateDeposit(
 		IdempotencyKey: idempotencyKey,
 	}
 
-	if err := s.repo.CreateTransactionTx(ctx, tx, transaction); err != nil {
+	if err := s.transactionRepo.CreateTransactionTx(ctx, tx, transaction); err != nil {
 		return nil, fmt.Errorf("failed to create deposit: %w", err)
+	}
+
+	if err := s.publishTransactionCreated(ctx, tx, transaction); err != nil {
+		return nil, fmt.Errorf("failed to publish transaction event: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -141,13 +161,13 @@ func (s *transactionService) CreateWithdrawal(
 	currency models.Currency,
 	idempotencyKey string,
 ) (*models.Transaction, error) {
-	tx, err := s.repo.BeginTx(ctx)
+	tx, err := s.transactionRepo.BeginTx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	existing, err := s.repo.GetTransactionByIdempotencyKeyTx(ctx, tx, idempotencyKey)
+	existing, err := s.transactionRepo.GetTransactionByIdempotencyKeyTx(ctx, tx, idempotencyKey)
 	if err != nil && !errors.Is(err, repository.ErrTransactionNotFound) {
 		return nil, fmt.Errorf("failed to check idempotency: %w", err)
 	}
@@ -170,8 +190,12 @@ func (s *transactionService) CreateWithdrawal(
 		IdempotencyKey: idempotencyKey,
 	}
 
-	if err := s.repo.CreateTransactionTx(ctx, tx, transaction); err != nil {
+	if err := s.transactionRepo.CreateTransactionTx(ctx, tx, transaction); err != nil {
 		return nil, fmt.Errorf("failed to create withdrawal: %w", err)
+	}
+
+	if err := s.publishTransactionCreated(ctx, tx, transaction); err != nil {
+		return nil, fmt.Errorf("failed to publish transaction event: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -182,22 +206,65 @@ func (s *transactionService) CreateWithdrawal(
 }
 
 func (s *transactionService) GetTransaction(ctx context.Context, transactionID string) (*models.Transaction, error) {
-	return s.repo.GetTransaction(ctx, transactionID)
+	return s.transactionRepo.GetTransaction(ctx, transactionID)
 }
 
 func (s *transactionService) ListTransactions(ctx context.Context, filters models.TransactionFilters, pageSize int32, pageToken string) ([]*models.Transaction, string, error) {
-	return s.repo.ListTransactions(ctx, filters, pageSize, pageToken)
+	return s.transactionRepo.ListTransactions(ctx, filters, pageSize, pageToken)
 }
 
 func (s *transactionService) CancelTransaction(ctx context.Context, transactionID string) (*models.Transaction, error) {
-	if err := s.repo.UpdateTransactionStatus(ctx, transactionID, models.TransactionStatusCancelled, nil); err != nil {
+	if err := s.transactionRepo.UpdateTransactionStatus(ctx, transactionID, models.TransactionStatusCancelled, nil); err != nil {
 		return nil, err
 	}
-	return s.repo.GetTransaction(ctx, transactionID)
+	return s.transactionRepo.GetTransaction(ctx, transactionID)
 }
 
 func (s *transactionService) GetTransactionStatus(ctx context.Context, transactionID string) (*models.Transaction, error) {
-	return s.repo.GetTransaction(ctx, transactionID)
+	return s.transactionRepo.GetTransaction(ctx, transactionID)
+}
+
+func (s *transactionService) HandleTransactionResult(ctx context.Context, tx pgx.Tx, event events.TransactionResult) error {
+	var status models.TransactionStatus
+	var errorMsg *string
+
+	if event.Status == "completed" {
+		status = models.TransactionStatusCompleted
+	} else {
+		status = models.TransactionStatusFailed
+		errorMsg = &event.FailureReason
+	}
+
+	return s.transactionRepo.UpdateTransactionStatusTx(ctx, tx, event.TransactionID, status, errorMsg)
+}
+
+func (s *transactionService) publishTransactionCreated(ctx context.Context, tx pgx.Tx, transaction *models.Transaction) error {
+	var fromAccountID, toAccountID string
+	if transaction.FromAccountID != nil {
+		fromAccountID = *transaction.FromAccountID
+	}
+	if transaction.ToAccountID != nil {
+		toAccountID = *transaction.ToAccountID
+	}
+
+	event := events.TransactionCreated{
+		EventID:       uuid.New().String(),
+		TransactionID: transaction.TransactionID,
+		Type:          string(transaction.Type),
+		Amount:        transaction.Amount,
+		Currency:      string(transaction.Currency),
+		ToAccountID:   toAccountID,
+		FromAccountID: fromAccountID,
+		Description:   "",
+		Timestamp:     time.Now(),
+	}
+
+	outboxEvent, err := events.NewOutboxEvent(event.EventID, "transaction_created", "transactions.created", event)
+	if err != nil {
+		return fmt.Errorf("failed to create outbox event: %w", err)
+	}
+
+	return s.outboxRepo.AddToOutboxTx(ctx, tx, *outboxEvent)
 }
 
 func (s *transactionService) isIdempotentDepositRequest(existingTransaction *models.Transaction, toAccountID string, amount float64, currency models.Currency) bool {

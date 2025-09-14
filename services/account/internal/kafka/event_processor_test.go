@@ -70,7 +70,7 @@ func TestEventProcessor_HandleTransactionEvent_Success(t *testing.T) {
 		Time:  time.Now(),
 	}
 
-	err = processor.HandleTransactionEvent(ctx, kafkaMessage)
+	err = processor.HandleTransactionCreatedEvent(ctx, kafkaMessage)
 	assert.NoError(t, err)
 
 	fromBalance, err := balanceRepo.GetBalance(ctx, fromAccountID)
@@ -137,7 +137,7 @@ func TestEventProcessor_HandleTransactionEvent_Idempotency(t *testing.T) {
 		Time:  time.Now(),
 	}
 
-	err = processor.HandleTransactionEvent(ctx, kafkaMessage)
+	err = processor.HandleTransactionCreatedEvent(ctx, kafkaMessage)
 	assert.NoError(t, err)
 
 	balanceAfterFirst, err := balanceRepo.GetBalance(ctx, accountID)
@@ -145,7 +145,7 @@ func TestEventProcessor_HandleTransactionEvent_Idempotency(t *testing.T) {
 	expectedBalance := float64(initialBalance) + depositAmount
 	assert.Equal(t, expectedBalance, balanceAfterFirst.Amount)
 
-	err = processor.HandleTransactionEvent(ctx, kafkaMessage)
+	err = processor.HandleTransactionCreatedEvent(ctx, kafkaMessage)
 	assert.NoError(t, err)
 
 	balanceAfterSecond, err := balanceRepo.GetBalance(ctx, accountID)
@@ -199,7 +199,7 @@ func TestEventProcessor_HandleTransactionEvent_AccountNotFound(t *testing.T) {
 		Time:  time.Now(),
 	}
 
-	err = processor.HandleTransactionEvent(ctx, kafkaMessage)
+	err = processor.HandleTransactionCreatedEvent(ctx, kafkaMessage)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "does not exist")
 
@@ -255,7 +255,7 @@ func TestEventProcessor_HandleTransactionEvent_InsufficientFunds(t *testing.T) {
 		Time:  time.Now(),
 	}
 
-	err = processor.HandleTransactionEvent(ctx, kafkaMessage)
+	err = processor.HandleTransactionCreatedEvent(ctx, kafkaMessage)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "insufficient funds")
 
@@ -297,7 +297,7 @@ func TestEventProcessor_HandleTransactionEvent_InvalidJSON(t *testing.T) {
 		Time:  time.Now(),
 	}
 
-	err := processor.HandleTransactionEvent(ctx, kafkaMessage)
+	err := processor.HandleTransactionCreatedEvent(ctx, kafkaMessage)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to unmarshal transaction event")
 }
@@ -393,7 +393,7 @@ func BenchmarkEventProcessor_HandleTransactionEvent(b *testing.B) {
 			Time:  time.Now(),
 		}
 
-		err = processor.HandleTransactionEvent(ctx, kafkaMessage)
+		err = processor.HandleTransactionCreatedEvent(ctx, kafkaMessage)
 		if err != nil {
 			b.Fatalf("Failed to process event: %v", err)
 		}
@@ -451,7 +451,7 @@ func BenchmarkEventProcessor_HandleTransactionEvent_Deposits(b *testing.B) {
 			Time:  time.Now(),
 		}
 
-		err = processor.HandleTransactionEvent(ctx, kafkaMessage)
+		err = processor.HandleTransactionCreatedEvent(ctx, kafkaMessage)
 		if err != nil {
 			b.Fatalf("Failed to process event: %v", err)
 		}
@@ -509,7 +509,7 @@ func BenchmarkEventProcessor_HandleTransactionEvent_Withdrawals(b *testing.B) {
 			Time:  time.Now(),
 		}
 
-		err = processor.HandleTransactionEvent(ctx, kafkaMessage)
+		err = processor.HandleTransactionCreatedEvent(ctx, kafkaMessage)
 		if err != nil {
 			b.Fatalf("Failed to process event: %v", err)
 		}
@@ -585,7 +585,7 @@ func BenchmarkEventProcessor_HandleTransactionEvent_Transfers(b *testing.B) {
 			Time:  time.Now(),
 		}
 
-		err = processor.HandleTransactionEvent(ctx, kafkaMessage)
+		err = processor.HandleTransactionCreatedEvent(ctx, kafkaMessage)
 		if err != nil {
 			b.Fatalf("Failed to process event: %v", err)
 		}
@@ -676,7 +676,7 @@ func BenchmarkEventProcessor_HandleTransactionEvent_MixedOperations(b *testing.B
 			Time:  time.Now(),
 		}
 
-		err = processor.HandleTransactionEvent(ctx, kafkaMessage)
+		err = processor.HandleTransactionCreatedEvent(ctx, kafkaMessage)
 		if err != nil {
 			b.Fatalf("Failed to process event: %v", err)
 		}
@@ -742,7 +742,7 @@ func BenchmarkEventProcessor_HandleTransactionEvent_Concurrent(b *testing.B) {
 				Time:  time.Now(),
 			}
 
-			err = processor.HandleTransactionEvent(ctx, kafkaMessage)
+			err = processor.HandleTransactionCreatedEvent(ctx, kafkaMessage)
 			if err != nil {
 				b.Fatalf("Failed to process event: %v", err)
 			}

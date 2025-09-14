@@ -12,7 +12,7 @@ import (
 )
 
 type TransactionService interface {
-	ProcessTransactionCreated(ctx context.Context, tx pgx.Tx, event events.TransactionCreated) error
+	HandleTransactionCreated(ctx context.Context, tx pgx.Tx, event events.TransactionCreated) error
 }
 
 type transactionService struct {
@@ -33,7 +33,7 @@ func NewTransactionService(
 	}
 }
 
-func (s *transactionService) ProcessTransactionCreated(ctx context.Context, tx pgx.Tx, event events.TransactionCreated) error {
+func (s *transactionService) HandleTransactionCreated(ctx context.Context, tx pgx.Tx, event events.TransactionCreated) error {
 	if event.FromAccountID != "" {
 		exists, err := s.accountRepo.AccountExistsTx(ctx, tx, event.FromAccountID)
 		if err != nil {

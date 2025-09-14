@@ -41,13 +41,6 @@ service TransactionService {
     };
   }
 
-  rpc CancelTransaction(CancelTransactionRequest) returns (Transaction) {
-    option (google.api.http) = {
-      post: "/v1/transactions/{transaction_id}:cancel"
-      body: "*"
-    };
-  }
-
   rpc GetTransactionStatus(GetTransactionStatusRequest) returns (TransactionStatusResponse) {
     option (google.api.http) = {
       get: "/v1/transactions/{transaction_id}/status"
@@ -111,10 +104,6 @@ message ListTransactionsResponse {
   string next_page_token = 2;
 }
 
-message CancelTransactionRequest {
-  string transaction_id = 1;
-}
-
 message GetTransactionStatusRequest {
   string transaction_id = 1;
 }
@@ -135,10 +124,8 @@ enum TransactionType {
 enum TransactionStatus {
   TRANSACTION_STATUS_UNSPECIFIED = 0;
   TRANSACTION_STATUS_PENDING = 1;
-  TRANSACTION_STATUS_PROCESSING = 2;
   TRANSACTION_STATUS_COMPLETED = 3;
   TRANSACTION_STATUS_FAILED = 4;
-  TRANSACTION_STATUS_CANCELLED = 5;
 }
 
 enum Currency {
