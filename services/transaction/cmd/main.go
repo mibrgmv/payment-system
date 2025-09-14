@@ -24,7 +24,6 @@ func main() {
 		log.Fatal("Failed to load config:", err)
 	}
 
-	// todo test transactions
 	pool, err := postgres.NewPostgresPool(ctx, cfg.Postgres)
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)

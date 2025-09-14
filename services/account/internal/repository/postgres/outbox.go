@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -86,7 +87,7 @@ func (r *outboxRepo) GetPendingEvents(ctx context.Context, limit int) ([]events.
 			}
 		}
 
-		event.Payload = payloadBytes
+		event.RawPayload = payloadBytes
 		eventsArr = append(eventsArr, event)
 	}
 
@@ -111,6 +112,9 @@ func (r *outboxRepo) LockEventForProcessing(ctx context.Context, tx pgx.Tx, even
 		&event.CreatedAt,
 		&event.Topic,
 	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan outbox event: %w", err)
 	}
@@ -128,7 +132,7 @@ func (r *outboxRepo) LockEventForProcessing(ctx context.Context, tx pgx.Tx, even
 		}
 	}
 
-	event.Payload = payloadBytes
+	event.RawPayload = payloadBytes
 	return &event, nil
 }
 

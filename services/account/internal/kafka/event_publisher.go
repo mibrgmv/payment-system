@@ -77,12 +77,11 @@ func (p *EventPublisher) ProcessOutboxBatch(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get pending events: %w", err)
 	}
-
 	if len(pending) == 0 {
 		return nil
 	}
 
-	workerCount := 10
+	workerCount := min(len(pending), 10)
 	jobs := make(chan events.OutboxEvent, len(pending))
 	results := make(chan error, len(pending))
 
@@ -104,6 +103,25 @@ func (p *EventPublisher) ProcessOutboxBatch(ctx context.Context) error {
 			log.Printf("Failed to process event: %v", err)
 		}
 	}
+
+	//var wg sync.WaitGroup
+	//sem := make(chan struct{}, 20)
+	//
+	//for _, event := range pending {
+	//	wg.Add(1)
+	//	sem <- struct{}{}
+	//	go func(evt events.OutboxEvent) {
+	//		defer func() {
+	//			<-sem
+	//			wg.Done()
+	//		}()
+	//		if err := p.ProcessSingleEvent(ctx, evt); err != nil {
+	//			log.Printf("Failed to process event %s: %v", evt.EventID, err)
+	//		}
+	//	}(event)
+	//}
+	//
+	//wg.Wait()
 
 	log.Printf("Processed %d events from outbox", len(pending))
 	return nil
