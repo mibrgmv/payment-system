@@ -2,6 +2,9 @@ package kafka_test
 
 import (
 	"context"
+	"io"
+	"log"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -13,22 +16,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type mockKafkaProducer struct {
-	produced     bool
-	produceCount int
-}
-
-func (m *mockKafkaProducer) Produce(ctx context.Context, topic string, key string, value interface{}) error {
-	m.produced = true
-	m.produceCount++
-	return nil
-}
-
-func (m *mockKafkaProducer) Close() error {
-	return nil
-}
-
 func TestEventPublisher_ProcessSingleEvent_TransactionCreated_Success(t *testing.T) {
+	log.SetOutput(io.Discard)
+	defer log.SetOutput(os.Stdout)
+
 	pool := setupTestPostgres(t)
 	defer dropTestPostgres(t, pool)
 
@@ -67,6 +58,9 @@ func TestEventPublisher_ProcessSingleEvent_TransactionCreated_Success(t *testing
 }
 
 func TestEventPublisher_ProcessSingleEvent_TransactionCreated_AlreadyPublished(t *testing.T) {
+	log.SetOutput(io.Discard)
+	defer log.SetOutput(os.Stdout)
+
 	pool := setupTestPostgres(t)
 	defer dropTestPostgres(t, pool)
 
@@ -92,6 +86,9 @@ func TestEventPublisher_ProcessSingleEvent_TransactionCreated_AlreadyPublished(t
 }
 
 func TestEventPublisher_ProcessSingleEvent_TransactionCreated_InvalidPayload(t *testing.T) {
+	log.SetOutput(io.Discard)
+	defer log.SetOutput(os.Stdout)
+
 	pool := setupTestPostgres(t)
 	defer dropTestPostgres(t, pool)
 
@@ -119,6 +116,9 @@ func TestEventPublisher_ProcessSingleEvent_TransactionCreated_InvalidPayload(t *
 }
 
 func TestEventPublisher_ProcessOutboxBatch(t *testing.T) {
+	log.SetOutput(io.Discard)
+	defer log.SetOutput(os.Stdout)
+
 	pool := setupTestPostgres(t)
 	defer dropTestPostgres(t, pool)
 
@@ -153,6 +153,9 @@ func TestEventPublisher_ProcessOutboxBatch(t *testing.T) {
 }
 
 func TestEventPublisher_ProcessSingleEvent_UnknownType(t *testing.T) {
+	log.SetOutput(io.Discard)
+	defer log.SetOutput(os.Stdout)
+
 	pool := setupTestPostgres(t)
 	defer dropTestPostgres(t, pool)
 

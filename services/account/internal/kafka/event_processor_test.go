@@ -548,8 +548,8 @@ func BenchmarkEventProcessor_HandleTransactionEvent_Transfers(b *testing.B) {
 		toAccountID := uuid.New().String()
 		userID := uuid.New().String()
 
-		setupBenchmarkAccount(b, pool, fromAccountID, userID, 1000000) // $10,000
-		setupBenchmarkAccount(b, pool, toAccountID, userID, 500000)    // $5,000
+		setupBenchmarkAccount(b, pool, fromAccountID, userID, 1000000)
+		setupBenchmarkAccount(b, pool, toAccountID, userID, 500000)
 
 		accountPairs[i] = struct {
 			fromAccountID string
@@ -618,7 +618,7 @@ func BenchmarkEventProcessor_HandleTransactionEvent_MixedOperations(b *testing.B
 	for i := 0; i < 10; i++ {
 		accountID := uuid.New().String()
 		accounts[i] = accountID
-		setupBenchmarkAccount(b, pool, accountID, uuid.New().String(), 1000000) // $10,000 each
+		setupBenchmarkAccount(b, pool, accountID, uuid.New().String(), 1000000)
 	}
 
 	b.ResetTimer()

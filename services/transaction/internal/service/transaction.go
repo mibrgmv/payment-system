@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -235,7 +236,13 @@ func (s *transactionService) HandleTransactionResult(ctx context.Context, tx pgx
 		errorMsg = &event.FailureReason
 	}
 
-	return s.transactionRepo.UpdateTransactionStatusTx(ctx, tx, event.TransactionID, status, errorMsg)
+	err := s.transactionRepo.UpdateTransactionStatusTx(ctx, tx, event.TransactionID, status, errorMsg)
+	if errors.Is(err, repository.ErrTransactionNotFound) {
+		log.Printf("transaction %s not found for event %s, skipping", event.TransactionID, event.EventID)
+		return nil
+	}
+
+	return err
 }
 
 func (s *transactionService) publishTransactionCreated(ctx context.Context, tx pgx.Tx, transaction *models.Transaction) error {
