@@ -16,8 +16,8 @@ services:
   account-postgres-test:
     image: postgres:latest
     environment:
-      - POSTGRES_USER=bill_clinton
-      - POSTGRES_PASSWORD=2001
+      - POSTGRES_USER=mazafaker322
+      - POSTGRES_PASSWORD=CEUvt7$12g
       - POSTGRES_DB=account_service_test
     ports:
       - "5434:5432"
@@ -41,6 +41,20 @@ services:
     networks:
       - transaction-network
 
+  transaction-postgres-test:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=kokojambo
+      - POSTGRES_PASSWORD=V(&IYBo97t6f
+      - POSTGRES_DB=transaction_service_test
+    ports:
+      - "5435:5432"
+    restart: unless-stopped
+    volumes:
+      - transaction-postgres-test-data:/var/lib/postgresql/data
+    networks:
+      - transaction-network
+
 #  redis:
 #    image: redis:latest
 #    ports:
@@ -56,6 +70,7 @@ volumes:
   account-postgres-data:
   account-postgres-test-data:
   transaction-postgres-data:
+  transaction-postgres-test-data:
 #  redis-data:
 
 networks:

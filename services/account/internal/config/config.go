@@ -49,7 +49,7 @@ func LoadTest(config *TestConfig) error {
 		return err
 	}
 
-	envPath := filepath.Join(basepath, "..", "..", "..", "..", ".env")
+	envPath := filepath.Join(basepath, "..", "..", "..", "..", ".env.test")
 	if err := godotenv.Load(envPath); err != nil {
 		log.Printf("no .env file found: %v", err)
 	}

@@ -1,0 +1,5 @@
+postgres-test:
+  host: localhost
+  port: 5435
+  database: transaction_service_test
+  sslmode: disable
