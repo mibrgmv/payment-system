@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/mibrgmv/payment-service/services/account/internal/kafka/events"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
+	"github.com/mibrgmv/payment-service/shared/json"
 	"github.com/mibrgmv/payment-service/shared/postgres"
 )
 
@@ -137,7 +138,7 @@ func (p *EventPublisher) ProcessSingleEvent(ctx context.Context, event events.Ou
 			return nil
 		}
 
-		if err := p.publishEvent(ctx, *lockedEvent); err != nil {
+		if err := p.publishEvent(ctx, lockedEvent); err != nil {
 			if markErr := p.outboxRepo.MarkEventAsFailedTx(ctx, tx, event.EventID, err.Error()); markErr != nil {
 				return fmt.Errorf("failed to mark event as failed: %w", markErr)
 			}
@@ -154,18 +155,18 @@ func (p *EventPublisher) ProcessSingleEvent(ctx context.Context, event events.Ou
 	return nil
 }
 
-func (p *EventPublisher) publishEvent(ctx context.Context, event events.OutboxEvent) error {
+func (p *EventPublisher) publishEvent(ctx context.Context, event *events.OutboxEvent) error {
 	switch event.EventType {
 	case "balance_updated":
 		var payload events.BalanceUpdated
-		if err := event.UnmarshalPayload(&payload); err != nil {
+		if err := json.StrictUnmarshal(event.RawPayload, &payload); err != nil {
 			return fmt.Errorf("failed to unmarshal balance updated event: %w", err)
 		}
 		return p.kafkaProducer.Produce(ctx, event.Topic, event.EventID, payload)
 
 	case "transaction_result":
 		var payload events.TransactionResult
-		if err := event.UnmarshalPayload(&payload); err != nil {
+		if err := json.StrictUnmarshal(event.RawPayload, &payload); err != nil {
 			return fmt.Errorf("failed to unmarshal transaction result event: %w", err)
 		}
 		return p.kafkaProducer.Produce(ctx, event.Topic, event.EventID, payload)

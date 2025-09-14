@@ -151,15 +151,12 @@ func (s *transactionService) publishBalanceUpdated(ctx context.Context, tx pgx.T
 		EventType:     "balance_updated",
 	}
 
-	outboxEvent := events.OutboxEvent{
-		EventID:   balanceEvent.EventID,
-		EventType: "balance_updated",
-		Payload:   balanceEvent,
-		CreatedAt: time.Now(),
-		Topic:     "balances.updated",
+	outboxEvent, err := events.NewOutboxEvent(balanceEvent.EventID, "balance_updated", "balances.updated", balanceEvent)
+	if err != nil {
+		return fmt.Errorf("failed to create outbox event: %w", err)
 	}
 
-	return s.outboxRepo.AddToOutboxTx(ctx, tx, outboxEvent)
+	return s.outboxRepo.AddToOutboxTx(ctx, tx, *outboxEvent)
 }
 
 func (s *transactionService) publishTransactionResult(ctx context.Context, tx pgx.Tx, transactionID string, processingErr error) error {
@@ -180,13 +177,10 @@ func (s *transactionService) publishTransactionResult(ctx context.Context, tx pg
 		EventType:     "transaction_result",
 	}
 
-	outboxEvent := events.OutboxEvent{
-		EventID:   resultEvent.EventID,
-		EventType: "transaction_result",
-		Payload:   resultEvent,
-		CreatedAt: time.Now(),
-		Topic:     "transactions.results",
+	outboxEvent, err := events.NewOutboxEvent(resultEvent.EventID, "transaction_result", "transactions.results", resultEvent)
+	if err != nil {
+		return fmt.Errorf("failed to create outbox event: %w", err)
 	}
 
-	return s.outboxRepo.AddToOutboxTx(ctx, tx, outboxEvent)
+	return s.outboxRepo.AddToOutboxTx(ctx, tx, *outboxEvent)
 }

@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEventPublisher_ProcessSingleEvent_Success(t *testing.T) {
+func TestEventPublisher_ProcessSingleEvent_BalanceUpdated_Success(t *testing.T) {
 	pool := setupTestPostgres(t)
 	defer dropTestPostgres(t, pool)
 
@@ -54,7 +54,7 @@ func TestEventPublisher_ProcessSingleEvent_Success(t *testing.T) {
 	assert.Len(t, published, 0)
 }
 
-func TestEventPublisher_ProcessSingleEvent_AlreadyPublished(t *testing.T) {
+func TestEventPublisher_ProcessSingleEvent_BalanceUpdated_AlreadyPublished(t *testing.T) {
 	pool := setupTestPostgres(t)
 	defer dropTestPostgres(t, pool)
 
@@ -79,7 +79,7 @@ func TestEventPublisher_ProcessSingleEvent_AlreadyPublished(t *testing.T) {
 	assert.False(t, mockProducer.produced)
 }
 
-func TestEventPublisher_ProcessSingleEvent_InvalidPayload(t *testing.T) {
+func TestEventPublisher_ProcessSingleEvent_BalanceUpdated_InvalidPayload(t *testing.T) {
 	pool := setupTestPostgres(t)
 	defer dropTestPostgres(t, pool)
 
@@ -91,7 +91,11 @@ func TestEventPublisher_ProcessSingleEvent_InvalidPayload(t *testing.T) {
 	ctx := context.Background()
 	eventID := uuid.New().String()
 
-	setupTestOutboxEvent(t, pool, eventID, "balance_updated", `invalid json`, "balances.updated")
+	setupTestOutboxEvent(t, pool, eventID, "balance_updated", `{
+		"wrong_field": "value",
+		"another_wrong_field": 123,
+		"this_wont_match": true
+	}`, "balances.updated")
 
 	err := publisher.ProcessSingleEvent(ctx, events.OutboxEvent{
 		EventID:   eventID,
@@ -101,6 +105,84 @@ func TestEventPublisher_ProcessSingleEvent_InvalidPayload(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to unmarshal")
+}
+
+func TestEventPublisher_ProcessSingleEvent_TransactionResult_Success(t *testing.T) {
+	pool := setupTestPostgres(t)
+	defer dropTestPostgres(t, pool)
+
+	outboxRepo := postgres.NewOutboxRepository(pool)
+	db := postgresshared.NewDB(pool)
+	mockProducer := &mockKafkaProducer{}
+	publisher := kafka.NewEventPublisher(outboxRepo, mockProducer, db)
+
+	ctx := context.Background()
+	eventID := uuid.New().String()
+
+	setupTestOutboxEvent(t, pool, eventID, "transaction_result", `{
+		"transaction_id": "test_txn_123",
+		"status": "completed",
+		"timestamp": "2023-12-07T10:00:00Z"
+	}`, "transactions.results")
+
+	err := publisher.ProcessSingleEvent(ctx, events.OutboxEvent{
+		EventID:   eventID,
+		EventType: "transaction_result",
+		Topic:     "transactions.results",
+	})
+
+	assert.NoError(t, err)
+	assert.True(t, mockProducer.produced)
+}
+
+func TestEventPublisher_ProcessSingleEvent_TransactionResult_InvalidPayload(t *testing.T) {
+	pool := setupTestPostgres(t)
+	defer dropTestPostgres(t, pool)
+
+	outboxRepo := postgres.NewOutboxRepository(pool)
+	db := postgresshared.NewDB(pool)
+	mockProducer := &mockKafkaProducer{}
+	publisher := kafka.NewEventPublisher(outboxRepo, mockProducer, db)
+
+	ctx := context.Background()
+	eventID := uuid.New().String()
+
+	setupTestOutboxEvent(t, pool, eventID, "transaction_result", `{
+		"wrong_field": "value"
+	}`, "transactions.results")
+
+	err := publisher.ProcessSingleEvent(ctx, events.OutboxEvent{
+		EventID:   eventID,
+		EventType: "transaction_result",
+		Topic:     "transactions.results",
+	})
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to unmarshal")
+}
+
+func TestEventPublisher_ProcessSingleEvent_UnknownType(t *testing.T) {
+	pool := setupTestPostgres(t)
+	defer dropTestPostgres(t, pool)
+
+	outboxRepo := postgres.NewOutboxRepository(pool)
+	db := postgresshared.NewDB(pool)
+	mockProducer := &mockKafkaProducer{}
+	publisher := kafka.NewEventPublisher(outboxRepo, mockProducer, db)
+
+	ctx := context.Background()
+	eventID := uuid.New().String()
+
+	setupTestOutboxEvent(t, pool, eventID, "unknown_type", `{"data": "test"}`, "unknown.topic")
+
+	err := publisher.ProcessSingleEvent(ctx, events.OutboxEvent{
+		EventID:   eventID,
+		EventType: "unknown_type",
+		Topic:     "unknown.topic",
+	})
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "unknown event type")
 }
 
 func TestEventPublisher_ProcessOutboxBatch(t *testing.T) {

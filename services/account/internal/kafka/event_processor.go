@@ -2,7 +2,6 @@ package kafka
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -12,6 +11,7 @@ import (
 	"github.com/mibrgmv/payment-service/services/account/internal/kafka/events"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
 	"github.com/mibrgmv/payment-service/services/account/internal/service"
+	"github.com/mibrgmv/payment-service/shared/json"
 	kafkashared "github.com/mibrgmv/payment-service/shared/kafka"
 	"github.com/mibrgmv/payment-service/shared/postgres"
 	"github.com/segmentio/kafka-go"
@@ -61,7 +61,7 @@ func (c *EventProcessor) StartConsumers(ctx context.Context, kafkaBrokers []stri
 
 func (c *EventProcessor) HandleTransactionEvent(ctx context.Context, message kafka.Message) error {
 	var event events.TransactionCreated
-	if err := json.Unmarshal(message.Value, &event); err != nil {
+	if err := json.StrictUnmarshal(message.Value, &event); err != nil {
 		return fmt.Errorf("failed to unmarshal transaction event: %w", err)
 	}
 

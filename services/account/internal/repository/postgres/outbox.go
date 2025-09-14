@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -21,28 +20,21 @@ func NewOutboxRepository(pool *pgxpool.Pool) repository.OutboxRepository {
 }
 
 func (r *outboxRepo) AddToOutboxTx(ctx context.Context, tx pgx.Tx, event events.OutboxEvent) error {
-	eventBytes, err := json.Marshal(event.Payload)
-	if err != nil {
-		return fmt.Errorf("failed to marshal event payload: %w", err)
-	}
-
 	query := `
 		insert into outbox_events (
 			event_id, 
 			event_type, 
 			payload, 
 			created_at, 
-			status,
 			topic
-		) values ($1, $2, $3, $4, $5, $6)
+		) values ($1, $2, $3, $4, $5)
 	`
 
-	_, err = tx.Exec(ctx, query,
+	_, err := tx.Exec(ctx, query,
 		event.EventID,
 		event.EventType,
-		eventBytes,
+		event.RawPayload,
 		event.CreatedAt,
-		"pending",
 		event.Topic,
 	)
 
@@ -72,19 +64,6 @@ func (r *outboxRepo) GetPendingEvents(ctx context.Context, limit int) ([]events.
 		err := rows.Scan(&event.EventID, &event.EventType, &payloadBytes, &event.CreatedAt, &event.Topic)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan outbox event: %w", err)
-		}
-
-		switch event.EventType {
-		case "balance_updated":
-			var payload events.BalanceUpdated
-			if err := json.Unmarshal(payloadBytes, &payload); err == nil {
-				event.Payload = payload
-			}
-		case "transaction_result":
-			var payload events.TransactionResult
-			if err := json.Unmarshal(payloadBytes, &payload); err == nil {
-				event.Payload = payload
-			}
 		}
 
 		event.RawPayload = payloadBytes
@@ -117,19 +96,6 @@ func (r *outboxRepo) LockEventForProcessing(ctx context.Context, tx pgx.Tx, even
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan outbox event: %w", err)
-	}
-
-	switch event.EventType {
-	case "balance_updated":
-		var payload events.BalanceUpdated
-		if err := json.Unmarshal(payloadBytes, &payload); err == nil {
-			event.Payload = payload
-		}
-	case "transaction_result":
-		var payload events.TransactionResult
-		if err := json.Unmarshal(payloadBytes, &payload); err == nil {
-			event.Payload = payload
-		}
 	}
 
 	event.RawPayload = payloadBytes
