@@ -1,5 +1,6 @@
 services:
   account-postgres:
+    container_name: account-postgres
     image: postgres:latest
     environment:
       - POSTGRES_USER=bill_clinton
@@ -14,6 +15,7 @@ services:
       - payment-system-network
 
   account-postgres-test:
+    container_name: account-postgres-test
     image: postgres:latest
     environment:
       - POSTGRES_USER=mazafaker322
@@ -28,6 +30,7 @@ services:
       - payment-system-network
 
   transaction-postgres:
+    container_name: transaction-postgres
     image: postgres:latest
     environment:
       - POSTGRES_USER=solid_snake
@@ -42,6 +45,7 @@ services:
       - payment-system-network
 
   transaction-postgres-test:
+    container_name: transaction-postgres-test
     image: postgres:latest
     environment:
       - POSTGRES_USER=kokojambo
@@ -56,6 +60,7 @@ services:
       - payment-system-network
 
   kafka:
+    container_name: kafka
     image: confluentinc/cp-kafka:7.4.0
     ports:
       - "9092:9092"
@@ -84,6 +89,7 @@ services:
       - payment-system-network
 
   kafka-ui:
+    container_name: kafka-ui
     image: provectuslabs/kafka-ui:latest
     depends_on:
       - kafka
