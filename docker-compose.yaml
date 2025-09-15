@@ -11,7 +11,7 @@ services:
     volumes:
       - account-postgres-data:/var/lib/postgresql/data
     networks:
-      - account-network
+      - payment-system-network
 
   account-postgres-test:
     image: postgres:latest
@@ -25,7 +25,7 @@ services:
     volumes:
       - account-postgres-test-data:/var/lib/postgresql/data
     networks:
-      - account-network
+      - payment-system-network
 
   transaction-postgres:
     image: postgres:latest
@@ -39,7 +39,7 @@ services:
     volumes:
       - transaction-postgres-data:/var/lib/postgresql/data
     networks:
-      - transaction-network
+      - payment-system-network
 
   transaction-postgres-test:
     image: postgres:latest
@@ -53,28 +53,55 @@ services:
     volumes:
       - transaction-postgres-test-data:/var/lib/postgresql/data
     networks:
-      - transaction-network
+      - payment-system-network
 
-#  redis:
-#    image: redis:latest
-#    ports:
-#      - "6379:6379"
-#    restart: unless-stopped
-#    command: redis-server --requirepass ${REDIS_PASSWORD}
-#    environment:
-#      - REDIS_PASSWORD=${REDIS_PASSWORD}
-#    volumes:
-#      - redis-data:/var/lib/redis/data
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: MkU3OEVBNkYwNkJCMzJBQg==
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - payment-system-network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    networks:
+      - payment-system-network
 
 volumes:
   account-postgres-data:
   account-postgres-test-data:
   transaction-postgres-data:
   transaction-postgres-test-data:
-#  redis-data:
+  kafka-data:
 
 networks:
-  account-network:
-    driver: bridge
-  transaction-network:
+  payment-system-network:
     driver: bridge
