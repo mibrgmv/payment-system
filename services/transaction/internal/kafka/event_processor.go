@@ -18,23 +18,20 @@ import (
 )
 
 type EventProcessor struct {
-	transactionRepo    repository.TransactionRepository
 	eventTrackingRepo  repository.EventTrackingRepository
 	db                 *postgres.DB
-	transactionService service.TransactionService
+	transactionHandler service.TransactionEventHandler
 }
 
 func NewEventProcessor(
-	transactionRepo repository.TransactionRepository,
 	eventTrackingRepo repository.EventTrackingRepository,
 	db *postgres.DB,
-	transactionService service.TransactionService,
+	transactionHandler service.TransactionEventHandler,
 ) *EventProcessor {
 	return &EventProcessor{
-		transactionRepo:    transactionRepo,
 		eventTrackingRepo:  eventTrackingRepo,
 		db:                 db,
-		transactionService: transactionService,
+		transactionHandler: transactionHandler,
 	}
 }
 
@@ -50,7 +47,7 @@ func (c *EventProcessor) StartConsumers(ctx context.Context, kafkaBrokers []stri
 	}
 
 	resultConsumer := kafkashared.NewConsumer(resultConfig, c.HandleTransactionResultEvent)
-	resultConsumer.Start(ctx)
+	go resultConsumer.Start(ctx)
 }
 
 func (c *EventProcessor) HandleTransactionResultEvent(ctx context.Context, message kafka.Message) error {
@@ -77,7 +74,7 @@ func (c *EventProcessor) HandleTransactionResultEvent(ctx context.Context, messa
 			return fmt.Errorf("failed to mark event as processed: %w", err)
 		}
 
-		if err := c.transactionService.HandleTransactionResult(ctx, tx, event); err != nil {
+		if err := c.transactionHandler.HandleTransactionResult(ctx, tx, event); err != nil {
 			return fmt.Errorf("failed to handle transaction result: %w", err)
 		}
 

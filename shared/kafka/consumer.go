@@ -46,7 +46,7 @@ func NewConsumer(cfg ConsumerConfig, handler MessageHandler) *Consumer {
 }
 
 func (c *Consumer) Start(ctx context.Context) {
-	go c.consumeLoop(ctx)
+	c.consumeLoop(ctx)
 }
 
 func (c *Consumer) consumeLoop(ctx context.Context) {

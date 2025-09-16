@@ -12,13 +12,12 @@ import (
 
 func NewGrpcServer(pool *pgxpool.Pool) *grpc.Server {
 	transactionRepo := postgres.NewTransactionRepository(pool)
-	transactionService := service.NewTransactionService(transactionRepo)
+	outboxRepo := postgres.NewOutboxRepository(pool)
+	transactionService := service.NewTransactionService(transactionRepo, outboxRepo)
 
 	server := grpc.NewServer()
-
 	grpcServer := transactiongrpc.NewTransactionServer(transactionService)
 	transactionv1.RegisterTransactionServiceServer(server, grpcServer)
-
 	reflection.Register(server)
 
 	return server

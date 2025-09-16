@@ -11,3 +11,11 @@ postgres:
   min_conns: 2
   max_conn_lifetime: 1h
   max_conn_idle_time: 30m
+
+kafka:
+  brokers: [ "localhost:29092" ]
+  group_id: "account-service"
+  topics:
+    transactions: "transactions.created"
+    results: "transactions.results"
+    balances: "balances.updated"

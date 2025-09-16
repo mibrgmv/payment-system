@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -30,7 +29,6 @@ type TransactionService interface {
 	ListTransactions(ctx context.Context, filters models.TransactionFilters, pageSize int32, pageToken string) ([]*models.Transaction, string, error)
 	CancelTransaction(ctx context.Context, transactionID string) (*models.Transaction, error)
 	GetTransactionStatus(ctx context.Context, transactionID string) (*models.Transaction, error)
-	HandleTransactionResult(ctx context.Context, tx pgx.Tx, event events.TransactionResult) error
 }
 
 type transactionService struct {
@@ -223,26 +221,6 @@ func (s *transactionService) CancelTransaction(ctx context.Context, transactionI
 
 func (s *transactionService) GetTransactionStatus(ctx context.Context, transactionID string) (*models.Transaction, error) {
 	return s.transactionRepo.GetTransaction(ctx, transactionID)
-}
-
-func (s *transactionService) HandleTransactionResult(ctx context.Context, tx pgx.Tx, event events.TransactionResult) error {
-	var status models.TransactionStatus
-	var errorMsg *string
-
-	if event.Status == "completed" {
-		status = models.TransactionStatusCompleted
-	} else {
-		status = models.TransactionStatusFailed
-		errorMsg = &event.FailureReason
-	}
-
-	err := s.transactionRepo.UpdateTransactionStatusTx(ctx, tx, event.TransactionID, status, errorMsg)
-	if errors.Is(err, repository.ErrTransactionNotFound) {
-		log.Printf("transaction %s not found for event %s, skipping", event.TransactionID, event.EventID)
-		return nil
-	}
-
-	return err
 }
 
 func (s *transactionService) publishTransactionCreated(ctx context.Context, tx pgx.Tx, transaction *models.Transaction) error {

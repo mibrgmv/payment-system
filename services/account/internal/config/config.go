@@ -7,6 +7,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/mibrgmv/payment-service/shared/env"
+	"github.com/mibrgmv/payment-service/shared/kafka"
 	"github.com/mibrgmv/payment-service/shared/loader"
 	"github.com/mibrgmv/payment-service/shared/postgres"
 	"github.com/mibrgmv/payment-service/shared/server"
@@ -15,6 +16,7 @@ import (
 type Config struct {
 	Server   server.Config   `yaml:"server"`
 	Postgres postgres.Config `yaml:"postgres"`
+	Kafka    kafka.Config    `yaml:"kafka"`
 }
 
 func Load(config *Config) error {

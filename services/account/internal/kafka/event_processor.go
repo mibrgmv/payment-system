@@ -56,7 +56,7 @@ func (c *EventProcessor) StartConsumers(ctx context.Context, kafkaBrokers []stri
 	}
 
 	transactionConsumer := kafkashared.NewConsumer(transactionConfig, c.HandleTransactionCreatedEvent)
-	transactionConsumer.Start(ctx)
+	go transactionConsumer.Start(ctx)
 }
 
 func (c *EventProcessor) HandleTransactionCreatedEvent(ctx context.Context, message kafka.Message) error {

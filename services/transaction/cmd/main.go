@@ -35,8 +35,13 @@ func main() {
 		log.Fatal("Failed to run migrations:", err)
 	}
 
-	s := server.NewGrpcServer(pool)
+	kafkaProcessor := server.SetupKafkaProcessor(pool)
+	kafkaPublisher := server.SetupKafkaPublisher(pool, cfg.Kafka)
 
+	kafkaProcessor.StartConsumers(ctx, cfg.Kafka.Brokers)
+	kafkaPublisher.Start(ctx)
+
+	s := server.NewGrpcServer(pool)
 	lis, err := net.Listen("tcp", cfg.Server.GetAddr())
 	if err != nil {
 		log.Fatal("Failed to listen:", err)
