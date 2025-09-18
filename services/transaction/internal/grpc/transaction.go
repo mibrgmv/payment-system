@@ -222,26 +222,6 @@ func (s *transactionServer) ListTransactions(ctx context.Context, req *transacti
 	}, nil
 }
 
-func (s *transactionServer) CancelTransaction(ctx context.Context, req *transactionv1.CancelTransactionRequest) (*transactionv1.Transaction, error) {
-	if err := validateTransactionId(req.TransactionId); err != nil {
-		return nil, err
-	}
-
-	transaction, err := s.service.CancelTransaction(ctx, req.TransactionId)
-	if err != nil {
-		switch {
-		case errors.Is(err, service.ErrTransactionNotFound):
-			return nil, status.Error(codes.NotFound, "transaction not found")
-		case errors.Is(err, service.ErrTransactionNotActive):
-			return nil, status.Error(codes.FailedPrecondition, "transaction cannot be cancelled - not in active state")
-		default:
-			return nil, status.Error(codes.Internal, "failed to cancel transaction")
-		}
-	}
-
-	return transaction.ToProto(), nil
-}
-
 func (s *transactionServer) GetTransactionStatus(ctx context.Context, req *transactionv1.GetTransactionStatusRequest) (*transactionv1.TransactionStatusResponse, error) {
 	if err := validateTransactionId(req.TransactionId); err != nil {
 		return nil, err

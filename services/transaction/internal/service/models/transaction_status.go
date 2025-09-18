@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+
 	transactionv1 "github.com/mibrgmv/payment-service/services/transaction/internal/protogen/transaction"
 )
 
@@ -40,14 +41,10 @@ func (s TransactionStatus) ToProto() transactionv1.TransactionStatus {
 	switch s {
 	case TransactionStatusPending:
 		return transactionv1.TransactionStatus_TRANSACTION_STATUS_PENDING
-	case TransactionStatusProcessing:
-		return transactionv1.TransactionStatus_TRANSACTION_STATUS_PROCESSING
 	case TransactionStatusCompleted:
 		return transactionv1.TransactionStatus_TRANSACTION_STATUS_COMPLETED
 	case TransactionStatusFailed:
 		return transactionv1.TransactionStatus_TRANSACTION_STATUS_FAILED
-	case TransactionStatusCancelled:
-		return transactionv1.TransactionStatus_TRANSACTION_STATUS_CANCELLED
 	default:
 		return transactionv1.TransactionStatus_TRANSACTION_STATUS_UNSPECIFIED
 	}
@@ -57,14 +54,10 @@ func TransactionStatusFromProto(pb transactionv1.TransactionStatus) (Transaction
 	switch pb {
 	case transactionv1.TransactionStatus_TRANSACTION_STATUS_PENDING:
 		return TransactionStatusPending, nil
-	case transactionv1.TransactionStatus_TRANSACTION_STATUS_PROCESSING:
-		return TransactionStatusProcessing, nil
 	case transactionv1.TransactionStatus_TRANSACTION_STATUS_COMPLETED:
 		return TransactionStatusCompleted, nil
 	case transactionv1.TransactionStatus_TRANSACTION_STATUS_FAILED:
 		return TransactionStatusFailed, nil
-	case transactionv1.TransactionStatus_TRANSACTION_STATUS_CANCELLED:
-		return TransactionStatusCancelled, nil
 	case transactionv1.TransactionStatus_TRANSACTION_STATUS_UNSPECIFIED:
 		return "", fmt.Errorf("transaction status must be specified")
 	default:

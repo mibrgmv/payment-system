@@ -80,10 +80,8 @@ type TransactionStatus int32
 const (
 	TransactionStatus_TRANSACTION_STATUS_UNSPECIFIED TransactionStatus = 0
 	TransactionStatus_TRANSACTION_STATUS_PENDING     TransactionStatus = 1
-	TransactionStatus_TRANSACTION_STATUS_PROCESSING  TransactionStatus = 2
 	TransactionStatus_TRANSACTION_STATUS_COMPLETED   TransactionStatus = 3
 	TransactionStatus_TRANSACTION_STATUS_FAILED      TransactionStatus = 4
-	TransactionStatus_TRANSACTION_STATUS_CANCELLED   TransactionStatus = 5
 )
 
 // Enum value maps for TransactionStatus.
@@ -91,18 +89,14 @@ var (
 	TransactionStatus_name = map[int32]string{
 		0: "TRANSACTION_STATUS_UNSPECIFIED",
 		1: "TRANSACTION_STATUS_PENDING",
-		2: "TRANSACTION_STATUS_PROCESSING",
 		3: "TRANSACTION_STATUS_COMPLETED",
 		4: "TRANSACTION_STATUS_FAILED",
-		5: "TRANSACTION_STATUS_CANCELLED",
 	}
 	TransactionStatus_value = map[string]int32{
 		"TRANSACTION_STATUS_UNSPECIFIED": 0,
 		"TRANSACTION_STATUS_PENDING":     1,
-		"TRANSACTION_STATUS_PROCESSING":  2,
 		"TRANSACTION_STATUS_COMPLETED":   3,
 		"TRANSACTION_STATUS_FAILED":      4,
-		"TRANSACTION_STATUS_CANCELLED":   5,
 	}
 )
 
@@ -717,50 +711,6 @@ func (x *ListTransactionsResponse) GetNextPageToken() string {
 	return ""
 }
 
-type CancelTransactionRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TransactionId string                 `protobuf:"bytes,1,opt,name=transaction_id,json=transactionId,proto3" json:"transaction_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CancelTransactionRequest) Reset() {
-	*x = CancelTransactionRequest{}
-	mi := &file_transaction_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CancelTransactionRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CancelTransactionRequest) ProtoMessage() {}
-
-func (x *CancelTransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_transaction_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CancelTransactionRequest.ProtoReflect.Descriptor instead.
-func (*CancelTransactionRequest) Descriptor() ([]byte, []int) {
-	return file_transaction_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *CancelTransactionRequest) GetTransactionId() string {
-	if x != nil {
-		return x.TransactionId
-	}
-	return ""
-}
-
 type GetTransactionStatusRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	TransactionId string                 `protobuf:"bytes,1,opt,name=transaction_id,json=transactionId,proto3" json:"transaction_id,omitempty"`
@@ -770,7 +720,7 @@ type GetTransactionStatusRequest struct {
 
 func (x *GetTransactionStatusRequest) Reset() {
 	*x = GetTransactionStatusRequest{}
-	mi := &file_transaction_proto_msgTypes[8]
+	mi := &file_transaction_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -782,7 +732,7 @@ func (x *GetTransactionStatusRequest) String() string {
 func (*GetTransactionStatusRequest) ProtoMessage() {}
 
 func (x *GetTransactionStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_transaction_proto_msgTypes[8]
+	mi := &file_transaction_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -795,7 +745,7 @@ func (x *GetTransactionStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionStatusRequest.ProtoReflect.Descriptor instead.
 func (*GetTransactionStatusRequest) Descriptor() ([]byte, []int) {
-	return file_transaction_proto_rawDescGZIP(), []int{8}
+	return file_transaction_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetTransactionStatusRequest) GetTransactionId() string {
@@ -816,7 +766,7 @@ type TransactionStatusResponse struct {
 
 func (x *TransactionStatusResponse) Reset() {
 	*x = TransactionStatusResponse{}
-	mi := &file_transaction_proto_msgTypes[9]
+	mi := &file_transaction_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -828,7 +778,7 @@ func (x *TransactionStatusResponse) String() string {
 func (*TransactionStatusResponse) ProtoMessage() {}
 
 func (x *TransactionStatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_transaction_proto_msgTypes[9]
+	mi := &file_transaction_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -841,7 +791,7 @@ func (x *TransactionStatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionStatusResponse.ProtoReflect.Descriptor instead.
 func (*TransactionStatusResponse) Descriptor() ([]byte, []int) {
-	return file_transaction_proto_rawDescGZIP(), []int{9}
+	return file_transaction_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *TransactionStatusResponse) GetTransactionId() string {
@@ -916,9 +866,7 @@ const file_transaction_proto_rawDesc = "" +
 	"page_token\x18\a \x01(\tR\tpageToken\"\x83\x01\n" +
 	"\x18ListTransactionsResponse\x12?\n" +
 	"\ftransactions\x18\x01 \x03(\v2\x1b.transaction.v1.TransactionR\ftransactions\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"A\n" +
-	"\x18CancelTransactionRequest\x12%\n" +
-	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"D\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"D\n" +
 	"\x1bGetTransactionStatusRequest\x12%\n" +
 	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"\xbc\x01\n" +
 	"\x19TransactionStatusResponse\x12%\n" +
@@ -929,26 +877,23 @@ const file_transaction_proto_rawDesc = "" +
 	"\x1cTRANSACTION_TYPE_UNSPECIFIED\x10\x00\x12\x1d\n" +
 	"\x19TRANSACTION_TYPE_TRANSFER\x10\x01\x12\x1c\n" +
 	"\x18TRANSACTION_TYPE_DEPOSIT\x10\x02\x12\x1f\n" +
-	"\x1bTRANSACTION_TYPE_WITHDRAWAL\x10\x03*\xdd\x01\n" +
+	"\x1bTRANSACTION_TYPE_WITHDRAWAL\x10\x03*\x98\x01\n" +
 	"\x11TransactionStatus\x12\"\n" +
 	"\x1eTRANSACTION_STATUS_UNSPECIFIED\x10\x00\x12\x1e\n" +
-	"\x1aTRANSACTION_STATUS_PENDING\x10\x01\x12!\n" +
-	"\x1dTRANSACTION_STATUS_PROCESSING\x10\x02\x12 \n" +
+	"\x1aTRANSACTION_STATUS_PENDING\x10\x01\x12 \n" +
 	"\x1cTRANSACTION_STATUS_COMPLETED\x10\x03\x12\x1d\n" +
-	"\x19TRANSACTION_STATUS_FAILED\x10\x04\x12 \n" +
-	"\x1cTRANSACTION_STATUS_CANCELLED\x10\x05*Z\n" +
+	"\x19TRANSACTION_STATUS_FAILED\x10\x04*Z\n" +
 	"\bCurrency\x12\x18\n" +
 	"\x14CURRENCY_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fCURRENCY_RUB\x10\x01\x12\x10\n" +
 	"\fCURRENCY_USD\x10\x02\x12\x10\n" +
-	"\fCURRENCY_EUR\x10\x032\x9e\a\n" +
+	"\fCURRENCY_EUR\x10\x032\x8c\x06\n" +
 	"\x12TransactionService\x12n\n" +
 	"\x0eCreateTransfer\x12%.transaction.v1.CreateTransferRequest\x1a\x1b.transaction.v1.Transaction\"\x18\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/v1/transfers\x12k\n" +
 	"\rCreateDeposit\x12$.transaction.v1.CreateDepositRequest\x1a\x1b.transaction.v1.Transaction\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/v1/deposits\x12t\n" +
 	"\x10CreateWithdrawal\x12'.transaction.v1.CreateWithdrawalRequest\x1a\x1b.transaction.v1.Transaction\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/v1/withdrawals\x12\x7f\n" +
 	"\x0eGetTransaction\x12%.transaction.v1.GetTransactionRequest\x1a\x1b.transaction.v1.Transaction\")\x82\xd3\xe4\x93\x02#\x12!/v1/transactions/{transaction_id}\x12\x7f\n" +
-	"\x10ListTransactions\x12'.transaction.v1.ListTransactionsRequest\x1a(.transaction.v1.ListTransactionsResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/transactions\x12\x8f\x01\n" +
-	"\x11CancelTransaction\x12(.transaction.v1.CancelTransactionRequest\x1a\x1b.transaction.v1.Transaction\"3\x82\xd3\xe4\x93\x02-:\x01*\"(/v1/transactions/{transaction_id}:cancel\x12\xa0\x01\n" +
+	"\x10ListTransactions\x12'.transaction.v1.ListTransactionsRequest\x1a(.transaction.v1.ListTransactionsResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/transactions\x12\xa0\x01\n" +
 	"\x14GetTransactionStatus\x12+.transaction.v1.GetTransactionStatusRequest\x1a).transaction.v1.TransactionStatusResponse\"0\x82\xd3\xe4\x93\x02*\x12(/v1/transactions/{transaction_id}/statusBeZcgithub.com/mibrgmv/payment-service/services/transaction/internal/protogen/transaction;transactionv1b\x06proto3"
 
 var (
@@ -964,7 +909,7 @@ func file_transaction_proto_rawDescGZIP() []byte {
 }
 
 var file_transaction_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_transaction_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_transaction_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_transaction_proto_goTypes = []any{
 	(TransactionType)(0),                // 0: transaction.v1.TransactionType
 	(TransactionStatus)(0),              // 1: transaction.v1.TransactionStatus
@@ -976,44 +921,41 @@ var file_transaction_proto_goTypes = []any{
 	(*GetTransactionRequest)(nil),       // 7: transaction.v1.GetTransactionRequest
 	(*ListTransactionsRequest)(nil),     // 8: transaction.v1.ListTransactionsRequest
 	(*ListTransactionsResponse)(nil),    // 9: transaction.v1.ListTransactionsResponse
-	(*CancelTransactionRequest)(nil),    // 10: transaction.v1.CancelTransactionRequest
-	(*GetTransactionStatusRequest)(nil), // 11: transaction.v1.GetTransactionStatusRequest
-	(*TransactionStatusResponse)(nil),   // 12: transaction.v1.TransactionStatusResponse
-	(*timestamppb.Timestamp)(nil),       // 13: google.protobuf.Timestamp
+	(*GetTransactionStatusRequest)(nil), // 10: transaction.v1.GetTransactionStatusRequest
+	(*TransactionStatusResponse)(nil),   // 11: transaction.v1.TransactionStatusResponse
+	(*timestamppb.Timestamp)(nil),       // 12: google.protobuf.Timestamp
 }
 var file_transaction_proto_depIdxs = []int32{
 	0,  // 0: transaction.v1.Transaction.type:type_name -> transaction.v1.TransactionType
 	2,  // 1: transaction.v1.Transaction.currency:type_name -> transaction.v1.Currency
 	1,  // 2: transaction.v1.Transaction.status:type_name -> transaction.v1.TransactionStatus
-	13, // 3: transaction.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
-	13, // 4: transaction.v1.Transaction.updated_at:type_name -> google.protobuf.Timestamp
-	13, // 5: transaction.v1.Transaction.completed_at:type_name -> google.protobuf.Timestamp
+	12, // 3: transaction.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
+	12, // 4: transaction.v1.Transaction.updated_at:type_name -> google.protobuf.Timestamp
+	12, // 5: transaction.v1.Transaction.completed_at:type_name -> google.protobuf.Timestamp
 	2,  // 6: transaction.v1.CreateTransferRequest.currency:type_name -> transaction.v1.Currency
 	2,  // 7: transaction.v1.CreateDepositRequest.currency:type_name -> transaction.v1.Currency
 	2,  // 8: transaction.v1.CreateWithdrawalRequest.currency:type_name -> transaction.v1.Currency
 	0,  // 9: transaction.v1.ListTransactionsRequest.type:type_name -> transaction.v1.TransactionType
 	1,  // 10: transaction.v1.ListTransactionsRequest.status:type_name -> transaction.v1.TransactionStatus
-	13, // 11: transaction.v1.ListTransactionsRequest.from_date:type_name -> google.protobuf.Timestamp
-	13, // 12: transaction.v1.ListTransactionsRequest.to_date:type_name -> google.protobuf.Timestamp
+	12, // 11: transaction.v1.ListTransactionsRequest.from_date:type_name -> google.protobuf.Timestamp
+	12, // 12: transaction.v1.ListTransactionsRequest.to_date:type_name -> google.protobuf.Timestamp
 	3,  // 13: transaction.v1.ListTransactionsResponse.transactions:type_name -> transaction.v1.Transaction
 	1,  // 14: transaction.v1.TransactionStatusResponse.status:type_name -> transaction.v1.TransactionStatus
-	13, // 15: transaction.v1.TransactionStatusResponse.last_updated:type_name -> google.protobuf.Timestamp
+	12, // 15: transaction.v1.TransactionStatusResponse.last_updated:type_name -> google.protobuf.Timestamp
 	4,  // 16: transaction.v1.TransactionService.CreateTransfer:input_type -> transaction.v1.CreateTransferRequest
 	5,  // 17: transaction.v1.TransactionService.CreateDeposit:input_type -> transaction.v1.CreateDepositRequest
 	6,  // 18: transaction.v1.TransactionService.CreateWithdrawal:input_type -> transaction.v1.CreateWithdrawalRequest
 	7,  // 19: transaction.v1.TransactionService.GetTransaction:input_type -> transaction.v1.GetTransactionRequest
 	8,  // 20: transaction.v1.TransactionService.ListTransactions:input_type -> transaction.v1.ListTransactionsRequest
-	10, // 21: transaction.v1.TransactionService.CancelTransaction:input_type -> transaction.v1.CancelTransactionRequest
-	11, // 22: transaction.v1.TransactionService.GetTransactionStatus:input_type -> transaction.v1.GetTransactionStatusRequest
-	3,  // 23: transaction.v1.TransactionService.CreateTransfer:output_type -> transaction.v1.Transaction
-	3,  // 24: transaction.v1.TransactionService.CreateDeposit:output_type -> transaction.v1.Transaction
-	3,  // 25: transaction.v1.TransactionService.CreateWithdrawal:output_type -> transaction.v1.Transaction
-	3,  // 26: transaction.v1.TransactionService.GetTransaction:output_type -> transaction.v1.Transaction
-	9,  // 27: transaction.v1.TransactionService.ListTransactions:output_type -> transaction.v1.ListTransactionsResponse
-	3,  // 28: transaction.v1.TransactionService.CancelTransaction:output_type -> transaction.v1.Transaction
-	12, // 29: transaction.v1.TransactionService.GetTransactionStatus:output_type -> transaction.v1.TransactionStatusResponse
-	23, // [23:30] is the sub-list for method output_type
-	16, // [16:23] is the sub-list for method input_type
+	10, // 21: transaction.v1.TransactionService.GetTransactionStatus:input_type -> transaction.v1.GetTransactionStatusRequest
+	3,  // 22: transaction.v1.TransactionService.CreateTransfer:output_type -> transaction.v1.Transaction
+	3,  // 23: transaction.v1.TransactionService.CreateDeposit:output_type -> transaction.v1.Transaction
+	3,  // 24: transaction.v1.TransactionService.CreateWithdrawal:output_type -> transaction.v1.Transaction
+	3,  // 25: transaction.v1.TransactionService.GetTransaction:output_type -> transaction.v1.Transaction
+	9,  // 26: transaction.v1.TransactionService.ListTransactions:output_type -> transaction.v1.ListTransactionsResponse
+	11, // 27: transaction.v1.TransactionService.GetTransactionStatus:output_type -> transaction.v1.TransactionStatusResponse
+	22, // [22:28] is the sub-list for method output_type
+	16, // [16:22] is the sub-list for method input_type
 	16, // [16:16] is the sub-list for extension type_name
 	16, // [16:16] is the sub-list for extension extendee
 	0,  // [0:16] is the sub-list for field type_name
@@ -1030,7 +972,7 @@ func file_transaction_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_transaction_proto_rawDesc), len(file_transaction_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   10,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

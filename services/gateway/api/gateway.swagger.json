@@ -316,10 +316,8 @@
             "enum": [
               "TRANSACTION_STATUS_UNSPECIFIED",
               "TRANSACTION_STATUS_PENDING",
-              "TRANSACTION_STATUS_PROCESSING",
               "TRANSACTION_STATUS_COMPLETED",
-              "TRANSACTION_STATUS_FAILED",
-              "TRANSACTION_STATUS_CANCELLED"
+              "TRANSACTION_STATUS_FAILED"
             ],
             "default": "TRANSACTION_STATUS_UNSPECIFIED"
           },
@@ -416,44 +414,6 @@
         ]
       }
     },
-    "/v1/transactions/{transactionId}:cancel": {
-      "post": {
-        "operationId": "TransactionService_CancelTransaction",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Transaction"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "transactionId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/TransactionServiceCancelTransactionBody"
-            }
-          }
-        ],
-        "tags": [
-          "TransactionService"
-        ]
-      }
-    },
     "/v1/transfers": {
       "post": {
         "operationId": "TransactionService_CreateTransfer",
@@ -520,9 +480,6 @@
     }
   },
   "definitions": {
-    "TransactionServiceCancelTransactionBody": {
-      "type": "object"
-    },
     "accountv1Currency": {
       "type": "string",
       "enum": [
@@ -760,10 +717,8 @@
       "enum": [
         "TRANSACTION_STATUS_UNSPECIFIED",
         "TRANSACTION_STATUS_PENDING",
-        "TRANSACTION_STATUS_PROCESSING",
         "TRANSACTION_STATUS_COMPLETED",
-        "TRANSACTION_STATUS_FAILED",
-        "TRANSACTION_STATUS_CANCELLED"
+        "TRANSACTION_STATUS_FAILED"
       ],
       "default": "TRANSACTION_STATUS_UNSPECIFIED"
     },

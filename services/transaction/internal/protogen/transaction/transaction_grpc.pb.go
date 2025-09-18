@@ -24,7 +24,6 @@ const (
 	TransactionService_CreateWithdrawal_FullMethodName     = "/transaction.v1.TransactionService/CreateWithdrawal"
 	TransactionService_GetTransaction_FullMethodName       = "/transaction.v1.TransactionService/GetTransaction"
 	TransactionService_ListTransactions_FullMethodName     = "/transaction.v1.TransactionService/ListTransactions"
-	TransactionService_CancelTransaction_FullMethodName    = "/transaction.v1.TransactionService/CancelTransaction"
 	TransactionService_GetTransactionStatus_FullMethodName = "/transaction.v1.TransactionService/GetTransactionStatus"
 )
 
@@ -37,7 +36,6 @@ type TransactionServiceClient interface {
 	CreateWithdrawal(ctx context.Context, in *CreateWithdrawalRequest, opts ...grpc.CallOption) (*Transaction, error)
 	GetTransaction(ctx context.Context, in *GetTransactionRequest, opts ...grpc.CallOption) (*Transaction, error)
 	ListTransactions(ctx context.Context, in *ListTransactionsRequest, opts ...grpc.CallOption) (*ListTransactionsResponse, error)
-	CancelTransaction(ctx context.Context, in *CancelTransactionRequest, opts ...grpc.CallOption) (*Transaction, error)
 	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*TransactionStatusResponse, error)
 }
 
@@ -99,16 +97,6 @@ func (c *transactionServiceClient) ListTransactions(ctx context.Context, in *Lis
 	return out, nil
 }
 
-func (c *transactionServiceClient) CancelTransaction(ctx context.Context, in *CancelTransactionRequest, opts ...grpc.CallOption) (*Transaction, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Transaction)
-	err := c.cc.Invoke(ctx, TransactionService_CancelTransaction_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *transactionServiceClient) GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*TransactionStatusResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TransactionStatusResponse)
@@ -128,7 +116,6 @@ type TransactionServiceServer interface {
 	CreateWithdrawal(context.Context, *CreateWithdrawalRequest) (*Transaction, error)
 	GetTransaction(context.Context, *GetTransactionRequest) (*Transaction, error)
 	ListTransactions(context.Context, *ListTransactionsRequest) (*ListTransactionsResponse, error)
-	CancelTransaction(context.Context, *CancelTransactionRequest) (*Transaction, error)
 	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*TransactionStatusResponse, error)
 	mustEmbedUnimplementedTransactionServiceServer()
 }
@@ -154,9 +141,6 @@ func (UnimplementedTransactionServiceServer) GetTransaction(context.Context, *Ge
 }
 func (UnimplementedTransactionServiceServer) ListTransactions(context.Context, *ListTransactionsRequest) (*ListTransactionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTransactions not implemented")
-}
-func (UnimplementedTransactionServiceServer) CancelTransaction(context.Context, *CancelTransactionRequest) (*Transaction, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CancelTransaction not implemented")
 }
 func (UnimplementedTransactionServiceServer) GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*TransactionStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionStatus not implemented")
@@ -272,24 +256,6 @@ func _TransactionService_ListTransactions_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TransactionService_CancelTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CancelTransactionRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TransactionServiceServer).CancelTransaction(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: TransactionService_CancelTransaction_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransactionServiceServer).CancelTransaction(ctx, req.(*CancelTransactionRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _TransactionService_GetTransactionStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetTransactionStatusRequest)
 	if err := dec(in); err != nil {
@@ -334,10 +300,6 @@ var TransactionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTransactions",
 			Handler:    _TransactionService_ListTransactions_Handler,
-		},
-		{
-			MethodName: "CancelTransaction",
-			Handler:    _TransactionService_CancelTransaction_Handler,
 		},
 		{
 			MethodName: "GetTransactionStatus",
