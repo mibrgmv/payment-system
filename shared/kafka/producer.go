@@ -10,8 +10,9 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-type Producer struct {
-	writer *kafka.Writer
+type Producer interface {
+	Produce(ctx context.Context, topic string, key string, value interface{}) error
+	Close() error
 }
 
 type ProducerConfig struct {
@@ -19,7 +20,11 @@ type ProducerConfig struct {
 	ClientID string
 }
 
-func NewProducer(cfg ProducerConfig) *Producer {
+type producer struct {
+	writer *kafka.Writer
+}
+
+func NewProducer(cfg ProducerConfig) Producer {
 	writer := &kafka.Writer{
 		Addr:         kafka.TCP(cfg.Brokers...),
 		Balancer:     &kafka.LeastBytes{},
@@ -30,10 +35,10 @@ func NewProducer(cfg ProducerConfig) *Producer {
 		ErrorLogger:  kafka.LoggerFunc(log.Printf),
 	}
 
-	return &Producer{writer: writer}
+	return &producer{writer: writer}
 }
 
-func (p *Producer) Produce(ctx context.Context, topic string, key string, value interface{}) error {
+func (p *producer) Produce(ctx context.Context, topic string, key string, value interface{}) error {
 	valueBytes, err := json.Marshal(value)
 	if err != nil {
 		return fmt.Errorf("failed to marshal message: %w", err)
@@ -49,6 +54,6 @@ func (p *Producer) Produce(ctx context.Context, topic string, key string, value 
 	return p.writer.WriteMessages(ctx, message)
 }
 
-func (p *Producer) Close() error {
+func (p *producer) Close() error {
 	return p.writer.Close()
 }

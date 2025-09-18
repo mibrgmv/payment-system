@@ -1,4 +1,4 @@
-package kafka
+package events
 
 import (
 	"context"
@@ -7,41 +7,42 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/mibrgmv/payment-service/services/account/internal/kafka/events"
-	"github.com/mibrgmv/payment-service/shared/json"
+	"github.com/mibrgmv/payment-service/shared/kafka"
 	"github.com/mibrgmv/payment-service/shared/outbox"
 	"github.com/mibrgmv/payment-service/shared/postgres"
 )
 
-type Producer interface {
-	Produce(ctx context.Context, topic string, key string, value interface{}) error
-	Close() error
+type EventHandler interface {
+	HandleEvent(ctx context.Context, event *outbox.Event, producer kafka.Producer) error
 }
 
-type EventPublisher struct {
+type Publisher struct {
 	outboxRepo    outbox.Repository
-	kafkaProducer Producer
+	kafkaProducer kafka.Producer
 	db            *postgres.DB
+	eventHandler  EventHandler
 }
 
-func NewEventPublisher(
+func NewPublisher(
 	outboxRepo outbox.Repository,
-	kafkaProducer Producer,
+	kafkaProducer kafka.Producer,
 	db *postgres.DB,
-) *EventPublisher {
-	return &EventPublisher{
+	eventHandler EventHandler,
+) *Publisher {
+	return &Publisher{
 		outboxRepo:    outboxRepo,
 		kafkaProducer: kafkaProducer,
 		db:            db,
+		eventHandler:  eventHandler,
 	}
 }
 
-func (p *EventPublisher) Start(ctx context.Context) {
+func (p *Publisher) Start(ctx context.Context) {
 	go p.publishLoop(ctx)
 	go p.cleanupLoop(ctx)
 }
 
-func (p *EventPublisher) publishLoop(ctx context.Context) {
+func (p *Publisher) publishLoop(ctx context.Context) {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
@@ -57,7 +58,7 @@ func (p *EventPublisher) publishLoop(ctx context.Context) {
 	}
 }
 
-func (p *EventPublisher) cleanupLoop(ctx context.Context) {
+func (p *Publisher) cleanupLoop(ctx context.Context) {
 	ticker := time.NewTicker(24 * time.Hour)
 	defer ticker.Stop()
 
@@ -73,7 +74,7 @@ func (p *EventPublisher) cleanupLoop(ctx context.Context) {
 	}
 }
 
-func (p *EventPublisher) ProcessOutboxBatch(ctx context.Context) error {
+func (p *Publisher) ProcessOutboxBatch(ctx context.Context) error {
 	pending, err := p.outboxRepo.GetPendingEvents(ctx, 100)
 	if err != nil {
 		return fmt.Errorf("failed to get pending events: %w", err)
@@ -128,7 +129,7 @@ func (p *EventPublisher) ProcessOutboxBatch(ctx context.Context) error {
 	return nil
 }
 
-func (p *EventPublisher) ProcessSingleEvent(ctx context.Context, event outbox.Event) error {
+func (p *Publisher) ProcessSingleEvent(ctx context.Context, event outbox.Event) error {
 	err := p.db.WithTransaction(ctx, func(tx pgx.Tx) error {
 		lockedEvent, err := p.outboxRepo.LockEventForProcessing(ctx, tx, event.EventID)
 		if err != nil {
@@ -138,7 +139,7 @@ func (p *EventPublisher) ProcessSingleEvent(ctx context.Context, event outbox.Ev
 			return nil
 		}
 
-		if err := p.publishEvent(ctx, lockedEvent); err != nil {
+		if err := p.eventHandler.HandleEvent(ctx, lockedEvent, p.kafkaProducer); err != nil {
 			if markErr := p.outboxRepo.MarkEventAsFailedTx(ctx, tx, event.EventID, err.Error()); markErr != nil {
 				return fmt.Errorf("failed to mark event as failed: %w", markErr)
 			}
@@ -153,25 +154,4 @@ func (p *EventPublisher) ProcessSingleEvent(ctx context.Context, event outbox.Ev
 	}
 
 	return nil
-}
-
-func (p *EventPublisher) publishEvent(ctx context.Context, event *outbox.Event) error {
-	switch event.EventType {
-	case "balance_updated":
-		var payload events.BalanceUpdated
-		if err := json.StrictUnmarshal(event.RawPayload, &payload); err != nil {
-			return fmt.Errorf("failed to unmarshal balance updated event: %w", err)
-		}
-		return p.kafkaProducer.Produce(ctx, event.Topic, event.EventID, payload)
-
-	case "transaction_result":
-		var payload events.TransactionResult
-		if err := json.StrictUnmarshal(event.RawPayload, &payload); err != nil {
-			return fmt.Errorf("failed to unmarshal transaction result event: %w", err)
-		}
-		return p.kafkaProducer.Produce(ctx, event.Topic, event.EventID, payload)
-
-	default:
-		return fmt.Errorf("unknown event type: %s", event.EventType)
-	}
 }
