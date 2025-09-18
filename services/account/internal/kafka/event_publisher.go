@@ -8,8 +8,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/mibrgmv/payment-service/services/account/internal/kafka/events"
-	"github.com/mibrgmv/payment-service/services/account/internal/repository"
 	"github.com/mibrgmv/payment-service/shared/json"
+	"github.com/mibrgmv/payment-service/shared/outbox"
 	"github.com/mibrgmv/payment-service/shared/postgres"
 )
 
@@ -19,13 +19,13 @@ type Producer interface {
 }
 
 type EventPublisher struct {
-	outboxRepo    repository.OutboxRepository
+	outboxRepo    outbox.Repository
 	kafkaProducer Producer
 	db            *postgres.DB
 }
 
 func NewEventPublisher(
-	outboxRepo repository.OutboxRepository,
+	outboxRepo outbox.Repository,
 	kafkaProducer Producer,
 	db *postgres.DB,
 ) *EventPublisher {
@@ -83,7 +83,7 @@ func (p *EventPublisher) ProcessOutboxBatch(ctx context.Context) error {
 	}
 
 	workerCount := min(len(pending), 10)
-	jobs := make(chan events.OutboxEvent, len(pending))
+	jobs := make(chan outbox.Event, len(pending))
 	results := make(chan error, len(pending))
 
 	for w := 0; w < workerCount; w++ {
@@ -128,7 +128,7 @@ func (p *EventPublisher) ProcessOutboxBatch(ctx context.Context) error {
 	return nil
 }
 
-func (p *EventPublisher) ProcessSingleEvent(ctx context.Context, event events.OutboxEvent) error {
+func (p *EventPublisher) ProcessSingleEvent(ctx context.Context, event outbox.Event) error {
 	err := p.db.WithTransaction(ctx, func(tx pgx.Tx) error {
 		lockedEvent, err := p.outboxRepo.LockEventForProcessing(ctx, tx, event.EventID)
 		if err != nil {
@@ -155,7 +155,7 @@ func (p *EventPublisher) ProcessSingleEvent(ctx context.Context, event events.Ou
 	return nil
 }
 
-func (p *EventPublisher) publishEvent(ctx context.Context, event *events.OutboxEvent) error {
+func (p *EventPublisher) publishEvent(ctx context.Context, event *outbox.Event) error {
 	switch event.EventType {
 	case "balance_updated":
 		var payload events.BalanceUpdated

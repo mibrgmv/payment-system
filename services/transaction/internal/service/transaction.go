@@ -11,6 +11,7 @@ import (
 	"github.com/mibrgmv/payment-service/services/transaction/internal/kafka/events"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/repository"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/service/models"
+	"github.com/mibrgmv/payment-service/shared/outbox"
 )
 
 var (
@@ -27,18 +28,17 @@ type TransactionService interface {
 	CreateWithdrawal(ctx context.Context, fromAccountID string, amount float64, currency models.Currency, idempotencyKey string) (*models.Transaction, error)
 	GetTransaction(ctx context.Context, transactionID string) (*models.Transaction, error)
 	ListTransactions(ctx context.Context, filters models.TransactionFilters, pageSize int32, pageToken string) ([]*models.Transaction, string, error)
-	CancelTransaction(ctx context.Context, transactionID string) (*models.Transaction, error)
 	GetTransactionStatus(ctx context.Context, transactionID string) (*models.Transaction, error)
 }
 
 type transactionService struct {
 	transactionRepo repository.TransactionRepository
-	outboxRepo      repository.OutboxRepository
+	outboxRepo      outbox.Repository
 }
 
 func NewTransactionService(
 	transactionRepo repository.TransactionRepository,
-	outboxRepo repository.OutboxRepository,
+	outboxRepo outbox.Repository,
 ) TransactionService {
 	return &transactionService{
 		transactionRepo: transactionRepo,
@@ -212,13 +212,6 @@ func (s *transactionService) ListTransactions(ctx context.Context, filters model
 	return s.transactionRepo.ListTransactions(ctx, filters, pageSize, pageToken)
 }
 
-func (s *transactionService) CancelTransaction(ctx context.Context, transactionID string) (*models.Transaction, error) {
-	if err := s.transactionRepo.UpdateTransactionStatus(ctx, transactionID, models.TransactionStatusCancelled, nil); err != nil {
-		return nil, err
-	}
-	return s.transactionRepo.GetTransaction(ctx, transactionID)
-}
-
 func (s *transactionService) GetTransactionStatus(ctx context.Context, transactionID string) (*models.Transaction, error) {
 	return s.transactionRepo.GetTransaction(ctx, transactionID)
 }
@@ -244,7 +237,7 @@ func (s *transactionService) publishTransactionCreated(ctx context.Context, tx p
 		Timestamp:     time.Now(),
 	}
 
-	outboxEvent, err := events.NewOutboxEvent(event.EventID, "transaction_created", "transactions.created", event)
+	outboxEvent, err := outbox.NewEvent(event.EventID, "transaction_created", "transactions.created", event)
 	if err != nil {
 		return fmt.Errorf("failed to create outbox event: %w", err)
 	}

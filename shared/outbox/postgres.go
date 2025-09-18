@@ -1,4 +1,4 @@
-package postgres
+package outbox
 
 import (
 	"context"
@@ -7,19 +7,17 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/mibrgmv/payment-service/services/transaction/internal/kafka/events"
-	"github.com/mibrgmv/payment-service/services/transaction/internal/repository"
 )
 
-type outboxRepo struct {
+type postgresRepo struct {
 	pool *pgxpool.Pool
 }
 
-func NewOutboxRepository(pool *pgxpool.Pool) repository.OutboxRepository {
-	return &outboxRepo{pool: pool}
+func NewPostgresRepository(pool *pgxpool.Pool) Repository {
+	return &postgresRepo{pool: pool}
 }
 
-func (r *outboxRepo) AddToOutboxTx(ctx context.Context, tx pgx.Tx, event events.OutboxEvent) error {
+func (r *postgresRepo) AddToOutboxTx(ctx context.Context, tx pgx.Tx, event Event) error {
 	query := `
 		insert into outbox_events (
 			event_id, 
@@ -41,7 +39,7 @@ func (r *outboxRepo) AddToOutboxTx(ctx context.Context, tx pgx.Tx, event events.
 	return err
 }
 
-func (r *outboxRepo) GetPendingEvents(ctx context.Context, limit int) ([]events.OutboxEvent, error) {
+func (r *postgresRepo) GetPendingEvents(ctx context.Context, limit int) ([]Event, error) {
 	query := `
 		select event_id, event_type, payload, created_at, topic
 		from outbox_events 
@@ -56,9 +54,9 @@ func (r *outboxRepo) GetPendingEvents(ctx context.Context, limit int) ([]events.
 	}
 	defer rows.Close()
 
-	var eventsArr []events.OutboxEvent
+	var eventsArr []Event
 	for rows.Next() {
-		var event events.OutboxEvent
+		var event Event
 		var payloadBytes []byte
 
 		err := rows.Scan(&event.EventID, &event.EventType, &payloadBytes, &event.CreatedAt, &event.Topic)
@@ -73,7 +71,7 @@ func (r *outboxRepo) GetPendingEvents(ctx context.Context, limit int) ([]events.
 	return eventsArr, nil
 }
 
-func (r *outboxRepo) LockEventForProcessing(ctx context.Context, tx pgx.Tx, eventID string) (*events.OutboxEvent, error) {
+func (r *postgresRepo) LockEventForProcessing(ctx context.Context, tx pgx.Tx, eventID string) (*Event, error) {
 	query := `
 		select event_id, event_type, payload, created_at, topic
 		from outbox_events 
@@ -81,7 +79,7 @@ func (r *outboxRepo) LockEventForProcessing(ctx context.Context, tx pgx.Tx, even
 		for update skip locked
 	`
 
-	var event events.OutboxEvent
+	var event Event
 	var payloadBytes []byte
 
 	err := tx.QueryRow(ctx, query, eventID).Scan(
@@ -102,7 +100,7 @@ func (r *outboxRepo) LockEventForProcessing(ctx context.Context, tx pgx.Tx, even
 	return &event, nil
 }
 
-func (r *outboxRepo) MarkEventAsPublishedTx(ctx context.Context, tx pgx.Tx, eventID string) error {
+func (r *postgresRepo) MarkEventAsPublishedTx(ctx context.Context, tx pgx.Tx, eventID string) error {
 	query := `
 		update outbox_events 
 		set status = 'published', published_at = now() 
@@ -113,7 +111,7 @@ func (r *outboxRepo) MarkEventAsPublishedTx(ctx context.Context, tx pgx.Tx, even
 	return err
 }
 
-func (r *outboxRepo) MarkEventAsFailedTx(ctx context.Context, tx pgx.Tx, eventID string, errorMsg string) error {
+func (r *postgresRepo) MarkEventAsFailedTx(ctx context.Context, tx pgx.Tx, eventID string, errorMsg string) error {
 	query := `
 		update outbox_events 
 		set status = 'failed', error_message = $2, retry_count = retry_count + 1
@@ -124,7 +122,7 @@ func (r *outboxRepo) MarkEventAsFailedTx(ctx context.Context, tx pgx.Tx, eventID
 	return err
 }
 
-func (r *outboxRepo) CleanupOldEvents(ctx context.Context, olderThanDays int) error {
+func (r *postgresRepo) CleanupOldEvents(ctx context.Context, olderThanDays int) error {
 	query := `
 		delete from outbox_events 
 		where status = 'published' 

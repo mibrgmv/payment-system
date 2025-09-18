@@ -6,13 +6,14 @@ import (
 	transactionv1 "github.com/mibrgmv/payment-service/services/transaction/internal/protogen/transaction"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/repository/postgres"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/service"
+	"github.com/mibrgmv/payment-service/shared/outbox"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
 func NewGrpcServer(pool *pgxpool.Pool) *grpc.Server {
 	transactionRepo := postgres.NewTransactionRepository(pool)
-	outboxRepo := postgres.NewOutboxRepository(pool)
+	outboxRepo := outbox.NewPostgresRepository(pool)
 	transactionService := service.NewTransactionService(transactionRepo, outboxRepo)
 
 	server := grpc.NewServer()

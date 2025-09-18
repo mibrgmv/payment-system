@@ -1,11 +1,11 @@
-package events
+package outbox
 
 import (
 	"encoding/json"
 	"time"
 )
 
-type OutboxEvent struct {
+type Event struct {
 	EventID    string    `json:"event_id"`
 	EventType  string    `json:"event_type"`
 	RawPayload []byte    `json:"-"`
@@ -13,13 +13,13 @@ type OutboxEvent struct {
 	Topic      string    `json:"topic"`
 }
 
-func NewOutboxEvent(eventID, eventType, topic string, payload interface{}) (*OutboxEvent, error) {
+func NewEvent(eventID, eventType, topic string, payload interface{}) (*Event, error) {
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
 
-	return &OutboxEvent{
+	return &Event{
 		EventID:    eventID,
 		EventType:  eventType,
 		Topic:      topic,

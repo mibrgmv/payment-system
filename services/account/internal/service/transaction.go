@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/mibrgmv/payment-service/services/account/internal/kafka/events"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
+	"github.com/mibrgmv/payment-service/shared/outbox"
 )
 
 type TransactionService interface {
@@ -18,13 +19,13 @@ type TransactionService interface {
 type transactionService struct {
 	balanceRepo repository.BalanceRepository
 	accountRepo repository.AccountRepository
-	outboxRepo  repository.OutboxRepository
+	outboxRepo  outbox.Repository
 }
 
 func NewTransactionService(
 	balanceRepo repository.BalanceRepository,
 	accountRepo repository.AccountRepository,
-	outboxRepo repository.OutboxRepository,
+	outboxRepo outbox.Repository,
 ) TransactionService {
 	return &transactionService{
 		balanceRepo: balanceRepo,
@@ -151,7 +152,7 @@ func (s *transactionService) publishBalanceUpdated(ctx context.Context, tx pgx.T
 		EventType:     "balance_updated",
 	}
 
-	outboxEvent, err := events.NewOutboxEvent(balanceEvent.EventID, "balance_updated", "balances.updated", balanceEvent)
+	outboxEvent, err := outbox.NewEvent(balanceEvent.EventID, "balance_updated", "balances.updated", balanceEvent)
 	if err != nil {
 		return fmt.Errorf("failed to create outbox event: %w", err)
 	}
@@ -177,7 +178,7 @@ func (s *transactionService) publishTransactionResult(ctx context.Context, tx pg
 		EventType:     "transaction_result",
 	}
 
-	outboxEvent, err := events.NewOutboxEvent(resultEvent.EventID, "transaction_result", "transactions.results", resultEvent)
+	outboxEvent, err := outbox.NewEvent(resultEvent.EventID, "transaction_result", "transactions.results", resultEvent)
 	if err != nil {
 		return fmt.Errorf("failed to create outbox event: %w", err)
 	}

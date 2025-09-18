@@ -13,6 +13,7 @@ import (
 	"github.com/mibrgmv/payment-service/services/account/internal/service"
 	"github.com/mibrgmv/payment-service/shared/json"
 	kafkashared "github.com/mibrgmv/payment-service/shared/kafka"
+	"github.com/mibrgmv/payment-service/shared/outbox"
 	"github.com/mibrgmv/payment-service/shared/postgres"
 	"github.com/segmentio/kafka-go"
 )
@@ -21,7 +22,7 @@ type EventProcessor struct {
 	balanceRepo        repository.BalanceRepository
 	accountRepo        repository.AccountRepository
 	eventTrackingRepo  repository.EventTrackingRepository
-	outboxRepo         repository.OutboxRepository
+	outboxRepo         outbox.Repository
 	db                 *postgres.DB
 	transactionService service.TransactionService
 }
@@ -30,7 +31,7 @@ func NewEventProcessor(
 	balanceRepo repository.BalanceRepository,
 	accountRepo repository.AccountRepository,
 	eventTrackingRepo repository.EventTrackingRepository,
-	outboxRepo repository.OutboxRepository,
+	outboxRepo outbox.Repository,
 	db *postgres.DB,
 	transactionService service.TransactionService,
 ) *EventProcessor {

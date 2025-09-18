@@ -9,6 +9,7 @@ import (
 	"github.com/mibrgmv/payment-service/services/transaction/internal/kafka/events"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/repository"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/service/models"
+	"github.com/mibrgmv/payment-service/shared/outbox"
 )
 
 type TransactionEventHandler interface {
@@ -17,12 +18,12 @@ type TransactionEventHandler interface {
 
 type transactionEventHandler struct {
 	transactionRepo repository.TransactionRepository
-	outboxRepo      repository.OutboxRepository
+	outboxRepo      outbox.Repository
 }
 
 func NewTransactionEventHandler(
 	transactionRepo repository.TransactionRepository,
-	outboxRepo repository.OutboxRepository,
+	outboxRepo outbox.Repository,
 ) TransactionEventHandler {
 	return &transactionEventHandler{
 		transactionRepo: transactionRepo,
