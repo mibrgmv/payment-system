@@ -11,6 +11,7 @@ import (
 	"github.com/mibrgmv/payment-service/services/account/internal/kafka/events"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
 	"github.com/mibrgmv/payment-service/services/account/internal/service"
+	"github.com/mibrgmv/payment-service/shared/events/event_tracking"
 	"github.com/mibrgmv/payment-service/shared/json"
 	kafkashared "github.com/mibrgmv/payment-service/shared/kafka"
 	"github.com/mibrgmv/payment-service/shared/outbox"
@@ -21,7 +22,7 @@ import (
 type EventProcessor struct {
 	balanceRepo        repository.BalanceRepository
 	accountRepo        repository.AccountRepository
-	eventTrackingRepo  repository.EventTrackingRepository
+	eventTrackingRepo  event_tracking.Repository
 	outboxRepo         outbox.Repository
 	db                 *postgres.DB
 	transactionService service.TransactionService
@@ -30,7 +31,7 @@ type EventProcessor struct {
 func NewEventProcessor(
 	balanceRepo repository.BalanceRepository,
 	accountRepo repository.AccountRepository,
-	eventTrackingRepo repository.EventTrackingRepository,
+	eventTrackingRepo event_tracking.Repository,
 	outboxRepo outbox.Repository,
 	db *postgres.DB,
 	transactionService service.TransactionService,
@@ -77,7 +78,7 @@ func (c *EventProcessor) HandleTransactionCreatedEvent(ctx context.Context, mess
 
 	err = c.db.WithTransaction(ctx, func(tx pgx.Tx) error {
 		if err := c.eventTrackingRepo.MarkEventProcessedTx(ctx, tx, event.EventID, event.Type); err != nil {
-			if errors.Is(err, repository.ErrEventAlreadyProcessed) {
+			if errors.Is(err, event_tracking.ErrEventAlreadyProcessed) {
 				log.Printf("event %s already processed concurrently, skipping", event.EventID)
 				return nil
 			}

@@ -6,6 +6,7 @@ import (
 	"github.com/mibrgmv/payment-service/services/account/internal/repository/postgres"
 	"github.com/mibrgmv/payment-service/services/account/internal/service"
 	"github.com/mibrgmv/payment-service/shared/events"
+	"github.com/mibrgmv/payment-service/shared/events/event_tracking"
 	kafkashared "github.com/mibrgmv/payment-service/shared/kafka"
 	"github.com/mibrgmv/payment-service/shared/outbox"
 	postgresshared "github.com/mibrgmv/payment-service/shared/postgres"
@@ -14,7 +15,7 @@ import (
 func SetupKafkaProcessor(pool *pgxpool.Pool) *kafka.EventProcessor {
 	balanceRepo := postgres.NewBalanceRepository(pool)
 	accountRepo := postgres.NewAccountRepository(pool)
-	eventTrackingRepo := postgres.NewEventTrackingRepository(pool)
+	eventTrackingRepo := event_tracking.NewPostgresRepository(pool)
 	outboxRepo := outbox.NewPostgresRepository(pool)
 	db := postgresshared.NewDB(pool)
 	transactionService := service.NewTransactionService(balanceRepo, accountRepo, outboxRepo)
