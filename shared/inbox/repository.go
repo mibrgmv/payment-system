@@ -1,4 +1,4 @@
-package event_tracking
+package inbox
 
 import (
 	"context"

@@ -1,44 +1,72 @@
 package server
 
 import (
+	"time"
+
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/mibrgmv/payment-service/services/transaction/internal/kafka"
+	"github.com/mibrgmv/payment-service/services/transaction/internal/kafka/consumer_handlers"
+	"github.com/mibrgmv/payment-service/services/transaction/internal/kafka/producer_handlers"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/repository/postgres"
 	"github.com/mibrgmv/payment-service/services/transaction/internal/service"
 	"github.com/mibrgmv/payment-service/shared/events"
-	"github.com/mibrgmv/payment-service/shared/events/event_tracking"
-	kafkashared "github.com/mibrgmv/payment-service/shared/kafka"
+	"github.com/mibrgmv/payment-service/shared/inbox"
+	sharedkafka "github.com/mibrgmv/payment-service/shared/kafka"
 	"github.com/mibrgmv/payment-service/shared/outbox"
-	postgresshared "github.com/mibrgmv/payment-service/shared/postgres"
+	sharedpostgres "github.com/mibrgmv/payment-service/shared/postgres"
 )
 
-func SetupKafkaProcessor(pool *pgxpool.Pool) *kafka.EventProcessor {
+func SetupKafkaProcessor(pool *pgxpool.Pool, kafkaCfg sharedkafka.Config) *events.Processor {
 	transactionRepo := postgres.NewTransactionRepository(pool)
-	eventTrackingRepo := event_tracking.NewPostgresRepository(pool)
+	inboxRepo := inbox.NewPostgresRepository(pool)
 	outboxRepo := outbox.NewPostgresRepository(pool)
-	db := postgresshared.NewDB(pool)
-	transactionEventHandler := service.NewTransactionEventHandler(transactionRepo, outboxRepo)
+	db := sharedpostgres.NewDB(pool)
+	transactionService := service.NewTransactionService(transactionRepo, outboxRepo)
 
-	return kafka.NewEventProcessor(
-		eventTrackingRepo,
-		db,
-		transactionEventHandler,
-	)
+	transactionResultHandler := consumer_handlers.NewTransactionResultHandler(transactionService)
+
+	registry := events.NewConsumerRegistry()
+	registry.Register(transactionResultHandler)
+
+	config := events.ProcessorConfig{
+		ServiceName:  "transaction-service",
+		KafkaBrokers: kafkaCfg.Brokers,
+		TopicHandlers: map[string]string{
+			"transactions.results": "transaction_result",
+		},
+		ConsumerConfigs: map[string]sharedkafka.ConsumerConfig{
+			"transactions.results": {
+				Brokers:         kafkaCfg.Brokers,
+				GroupID:         "transaction-service-results",
+				Topic:           "transactions.results",
+				AutoOffsetReset: "latest",
+				MaxWait:         1 * time.Second,
+				MinBytes:        10,
+				MaxBytes:        10e6,
+			},
+		},
+	}
+
+	return events.NewProcessor(registry, inboxRepo, db, config)
 }
 
-func SetupKafkaPublisher(pool *pgxpool.Pool, kafkaCfg kafkashared.Config) *events.Publisher {
+func SetupKafkaPublisher(pool *pgxpool.Pool, kafkaCfg sharedkafka.Config) *events.Publisher {
 	outboxRepo := outbox.NewPostgresRepository(pool)
-	db := postgresshared.NewDB(pool)
-	producer := kafkashared.NewProducer(kafkashared.ProducerConfig{
+	db := sharedpostgres.NewDB(pool)
+	producer := sharedkafka.NewProducer(sharedkafka.ProducerConfig{
 		Brokers:  kafkaCfg.Brokers,
 		ClientID: "transaction-service-producer",
 	})
-	eventHandler := kafka.NewTransactionEventHandler()
 
-	return events.NewPublisher(
-		outboxRepo,
-		producer,
-		db,
-		eventHandler,
-	)
+	publisherConfig := events.PublisherConfig{
+		BatchSize:       100,
+		WorkerCount:     10,
+		ProcessInterval: 5 * time.Second,
+		CleanupInterval: 1 * time.Hour,
+		CleanupDays:     7,
+	}
+
+	registry := events.NewPublisherRegistry()
+	registry.Register(producer_handlers.NewTransactionCreatedHandler())
+
+	return events.NewPublisher(registry, outboxRepo, producer, db, publisherConfig)
 }

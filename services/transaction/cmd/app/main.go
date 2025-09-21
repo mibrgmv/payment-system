@@ -35,10 +35,12 @@ func main() {
 		log.Fatal("Failed to run migrations:", err)
 	}
 
-	kafkaProcessor := server.SetupKafkaProcessor(pool)
-	kafkaPublisher := server.SetupKafkaPublisher(pool, cfg.Kafka)
+	kafkaProcessor := server.SetupKafkaProcessor(pool, cfg.Kafka)
+	if err := kafkaProcessor.Start(ctx); err != nil {
+		log.Fatal("Failed to start Kafka processor:", err)
+	}
 
-	kafkaProcessor.StartConsumers(ctx, cfg.Kafka.Brokers)
+	kafkaPublisher := server.SetupKafkaPublisher(pool, cfg.Kafka)
 	kafkaPublisher.Start(ctx)
 
 	s := server.NewGrpcServer(pool)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,11 +16,10 @@ import (
 )
 
 var (
-	ErrInvalidTransaction   = errors.New("invalid transaction")
-	ErrInsufficientFunds    = errors.New("insufficient funds")
-	ErrIdempotencyConflict  = errors.New("idempotency key conflict")
-	ErrTransactionNotActive = errors.New("transaction is not in active state")
-	ErrTransactionNotFound  = repository.ErrTransactionNotFound
+	ErrInvalidTransaction  = errors.New("invalid transaction")
+	ErrInsufficientFunds   = errors.New("insufficient funds")
+	ErrIdempotencyConflict = errors.New("idempotency key conflict")
+	ErrTransactionNotFound = repository.ErrTransactionNotFound
 )
 
 type TransactionService interface {
@@ -29,6 +29,7 @@ type TransactionService interface {
 	GetTransaction(ctx context.Context, transactionID string) (*models.Transaction, error)
 	ListTransactions(ctx context.Context, filters models.TransactionFilters, pageSize int32, pageToken string) ([]*models.Transaction, string, error)
 	GetTransactionStatus(ctx context.Context, transactionID string) (*models.Transaction, error)
+	HandleTransactionResult(ctx context.Context, tx pgx.Tx, event events.TransactionResult) error
 }
 
 type transactionService struct {
@@ -214,6 +215,26 @@ func (s *transactionService) ListTransactions(ctx context.Context, filters model
 
 func (s *transactionService) GetTransactionStatus(ctx context.Context, transactionID string) (*models.Transaction, error) {
 	return s.transactionRepo.GetTransaction(ctx, transactionID)
+}
+
+func (s *transactionService) HandleTransactionResult(ctx context.Context, tx pgx.Tx, event events.TransactionResult) error {
+	var status models.TransactionStatus
+	var errorMsg *string
+
+	if event.Status == "completed" {
+		status = models.TransactionStatusCompleted
+	} else {
+		status = models.TransactionStatusFailed
+		errorMsg = &event.FailureReason
+	}
+
+	err := s.transactionRepo.UpdateTransactionStatusTx(ctx, tx, event.TransactionID, status, errorMsg)
+	if errors.Is(err, repository.ErrTransactionNotFound) {
+		log.Printf("transaction %s not found for event %s, skipping", event.TransactionID, event.EventID)
+		return nil
+	}
+
+	return err
 }
 
 func (s *transactionService) publishTransactionCreated(ctx context.Context, tx pgx.Tx, transaction *models.Transaction) error {

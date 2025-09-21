@@ -12,28 +12,35 @@ import (
 	"github.com/mibrgmv/payment-service/shared/postgres"
 )
 
-type EventHandler interface {
-	HandleEvent(ctx context.Context, event *outbox.Event, producer kafka.Producer) error
+type PublisherConfig struct {
+	BatchSize       int           `yaml:"batch_size"`
+	WorkerCount     int           `yaml:"worker_count"`
+	ProcessInterval time.Duration `yaml:"process_interval"`
+	CleanupInterval time.Duration `yaml:"cleanup_interval"`
+	CleanupDays     int           `yaml:"cleanup_days"`
 }
 
 type Publisher struct {
+	registry      *PublisherRegistry
 	outboxRepo    outbox.Repository
 	kafkaProducer kafka.Producer
 	db            *postgres.DB
-	eventHandler  EventHandler
+	config        PublisherConfig
 }
 
 func NewPublisher(
+	registry *PublisherRegistry,
 	outboxRepo outbox.Repository,
 	kafkaProducer kafka.Producer,
 	db *postgres.DB,
-	eventHandler EventHandler,
+	config PublisherConfig,
 ) *Publisher {
 	return &Publisher{
+		registry:      registry,
 		outboxRepo:    outboxRepo,
 		kafkaProducer: kafkaProducer,
 		db:            db,
-		eventHandler:  eventHandler,
+		config:        config,
 	}
 }
 
@@ -43,7 +50,7 @@ func (p *Publisher) Start(ctx context.Context) {
 }
 
 func (p *Publisher) publishLoop(ctx context.Context) {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(p.config.ProcessInterval)
 	defer ticker.Stop()
 
 	for {
@@ -59,7 +66,7 @@ func (p *Publisher) publishLoop(ctx context.Context) {
 }
 
 func (p *Publisher) cleanupLoop(ctx context.Context) {
-	ticker := time.NewTicker(24 * time.Hour)
+	ticker := time.NewTicker(p.config.CleanupInterval)
 	defer ticker.Stop()
 
 	for {
@@ -67,7 +74,7 @@ func (p *Publisher) cleanupLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if err := p.outboxRepo.CleanupOldEvents(ctx, 7); err != nil {
+			if err := p.outboxRepo.CleanupOldEvents(ctx, p.config.CleanupDays); err != nil {
 				log.Printf("Error cleaning up old events: %v", err)
 			}
 		}
@@ -75,7 +82,7 @@ func (p *Publisher) cleanupLoop(ctx context.Context) {
 }
 
 func (p *Publisher) ProcessOutboxBatch(ctx context.Context) error {
-	pending, err := p.outboxRepo.GetPendingEvents(ctx, 100)
+	pending, err := p.outboxRepo.GetPendingEvents(ctx, p.config.BatchSize)
 	if err != nil {
 		return fmt.Errorf("failed to get pending events: %w", err)
 	}
@@ -83,7 +90,7 @@ func (p *Publisher) ProcessOutboxBatch(ctx context.Context) error {
 		return nil
 	}
 
-	workerCount := min(len(pending), 10)
+	workerCount := min(len(pending), p.config.WorkerCount)
 	jobs := make(chan outbox.Event, len(pending))
 	results := make(chan error, len(pending))
 
@@ -100,9 +107,12 @@ func (p *Publisher) ProcessOutboxBatch(ctx context.Context) error {
 	}
 	close(jobs)
 
+	successCount := 0
 	for i := 0; i < len(pending); i++ {
 		if err := <-results; err != nil {
 			log.Printf("Failed to process event: %v", err)
+		} else {
+			successCount++
 		}
 	}
 
@@ -125,7 +135,7 @@ func (p *Publisher) ProcessOutboxBatch(ctx context.Context) error {
 	//
 	//wg.Wait()
 
-	log.Printf("Processed %d events from outbox", len(pending))
+	log.Printf("Processed %d events from outbox (%d successful)", len(pending), successCount)
 	return nil
 }
 
@@ -139,11 +149,16 @@ func (p *Publisher) ProcessSingleEvent(ctx context.Context, event outbox.Event) 
 			return nil
 		}
 
-		if err := p.eventHandler.HandleEvent(ctx, lockedEvent, p.kafkaProducer); err != nil {
+		handler, exists := p.registry.GetHandler(lockedEvent.EventType)
+		if !exists {
+			return fmt.Errorf("no handler registered for event type: %s", lockedEvent.EventType)
+		}
+
+		if err := handler.HandleEvent(ctx, lockedEvent, p.kafkaProducer); err != nil {
 			if markErr := p.outboxRepo.MarkEventAsFailedTx(ctx, tx, event.EventID, err.Error()); markErr != nil {
 				return fmt.Errorf("failed to mark event as failed: %w", markErr)
 			}
-			return err
+			return nil
 		}
 
 		return p.outboxRepo.MarkEventAsPublishedTx(ctx, tx, event.EventID)

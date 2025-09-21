@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,6 +11,11 @@ import (
 	"github.com/mibrgmv/payment-service/services/account/internal/kafka/events"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
 	"github.com/mibrgmv/payment-service/shared/outbox"
+)
+
+var (
+	ErrInsufficientFunds = errors.New("insufficient funds")
+	ErrCurrencyMismatch  = errors.New("currency mismatch")
 )
 
 type TransactionService interface {
@@ -35,24 +41,14 @@ func NewTransactionService(
 }
 
 func (s *transactionService) HandleTransactionCreated(ctx context.Context, tx pgx.Tx, event events.TransactionCreated) error {
-	if event.FromAccountID != "" {
-		exists, err := s.accountRepo.AccountExistsTx(ctx, tx, event.FromAccountID)
-		if err != nil {
-			return fmt.Errorf("failed to check from account: %w", err)
+	if err := s.validateInput(ctx, tx, event); err != nil {
+		if publishErr := s.publishTransactionResult(ctx, tx, event.TransactionID, err); publishErr != nil {
+			return fmt.Errorf("failed to publish transaction result: %w", publishErr)
 		}
-		if !exists {
-			return fmt.Errorf("from account %s does not exist", event.FromAccountID)
+		if errors.Is(err, ErrCurrencyMismatch) || errors.Is(err, ErrInsufficientFunds) {
+			return nil
 		}
-	}
-
-	if event.ToAccountID != "" {
-		exists, err := s.accountRepo.AccountExistsTx(ctx, tx, event.ToAccountID)
-		if err != nil {
-			return fmt.Errorf("failed to check to account: %w", err)
-		}
-		if !exists {
-			return fmt.Errorf("to account %s does not exist", event.ToAccountID)
-		}
+		return fmt.Errorf("failed to validate transaction created: %w", err)
 	}
 
 	var processingErr error
@@ -74,6 +70,40 @@ func (s *transactionService) HandleTransactionCreated(ctx context.Context, tx pg
 	return processingErr
 }
 
+func (s *transactionService) validateInput(ctx context.Context, tx pgx.Tx, event events.TransactionCreated) error {
+	if event.FromAccountID != "" {
+		exists, err := s.accountRepo.AccountExistsTx(ctx, tx, event.FromAccountID)
+		if err != nil {
+			return fmt.Errorf("failed to check from account: %w", err)
+		}
+		if !exists {
+			return fmt.Errorf("from account %s does not exist", event.FromAccountID)
+		}
+	}
+
+	if event.ToAccountID != "" {
+		exists, err := s.accountRepo.AccountExistsTx(ctx, tx, event.ToAccountID)
+		if err != nil {
+			return fmt.Errorf("failed to check to account: %w", err)
+		}
+		if !exists {
+			return fmt.Errorf("to account %s does not exist", event.ToAccountID)
+		}
+	}
+
+	if event.Currency != "" {
+		account, err := s.accountRepo.GetAccountTx(ctx, tx, event.ToAccountID)
+		if err != nil {
+			return fmt.Errorf("failed to get to account details: %w", err)
+		}
+		if account.Currency.String() != event.Currency {
+			return ErrCurrencyMismatch
+		}
+	}
+
+	return nil
+}
+
 func (s *transactionService) processTransfer(ctx context.Context, tx pgx.Tx, event events.TransactionCreated) error {
 	if _, err := s.balanceRepo.UpdateBalanceTx(ctx, tx, event.FromAccountID, -event.Amount); err != nil {
 		return fmt.Errorf("failed to transfer from account: %w", err)
@@ -83,24 +113,12 @@ func (s *transactionService) processTransfer(ctx context.Context, tx pgx.Tx, eve
 		return fmt.Errorf("failed to transfer to account: %w", err)
 	}
 
-	if err := s.publishBalanceUpdated(ctx, tx, event.FromAccountID, -event.Amount, event.TransactionID, "transfer_from"); err != nil {
-		return fmt.Errorf("failed to publish transfer_from event: %w", err)
-	}
-
-	if err := s.publishBalanceUpdated(ctx, tx, event.ToAccountID, event.Amount, event.TransactionID, "transfer_to"); err != nil {
-		return fmt.Errorf("failed to publish transfer_to event: %w", err)
-	}
-
 	return nil
 }
 
 func (s *transactionService) processDeposit(ctx context.Context, tx pgx.Tx, event events.TransactionCreated) error {
 	if _, err := s.balanceRepo.UpdateBalanceTx(ctx, tx, event.ToAccountID, event.Amount); err != nil {
 		return fmt.Errorf("failed to deposit to account: %w", err)
-	}
-
-	if err := s.publishBalanceUpdated(ctx, tx, event.ToAccountID, event.Amount, event.TransactionID, "deposit"); err != nil {
-		return fmt.Errorf("failed to publish deposit event: %w", err)
 	}
 
 	return nil
@@ -120,44 +138,7 @@ func (s *transactionService) processWithdrawal(ctx context.Context, tx pgx.Tx, e
 		return fmt.Errorf("failed to withdraw from account: %w", err)
 	}
 
-	if err := s.publishBalanceUpdated(ctx, tx, event.FromAccountID, -event.Amount, event.TransactionID, "withdrawal"); err != nil {
-		return fmt.Errorf("failed to publish withdrawal event: %w", err)
-	}
-
 	return nil
-}
-
-func (s *transactionService) publishBalanceUpdated(ctx context.Context, tx pgx.Tx, accountID string, amount float64, transactionID, changeType string) error {
-	account, err := s.accountRepo.GetAccountTx(ctx, tx, accountID)
-	if err != nil {
-		return fmt.Errorf("failed to get account: %w", err)
-	}
-
-	balance, err := s.balanceRepo.GetBalanceTx(ctx, tx, accountID)
-	if err != nil {
-		return fmt.Errorf("failed to get balance: %w", err)
-	}
-
-	balanceEvent := events.BalanceUpdated{
-		EventID:       uuid.New().String(),
-		AccountID:     accountID,
-		UserID:        account.UserID,
-		OldBalance:    balance.Amount - amount,
-		NewBalance:    balance.Amount,
-		ChangeAmount:  amount,
-		ChangeType:    changeType,
-		Source:        "transaction",
-		TransactionID: transactionID,
-		Timestamp:     time.Now(),
-		EventType:     "balance_updated",
-	}
-
-	outboxEvent, err := outbox.NewEvent(balanceEvent.EventID, "balance_updated", "balances.updated", balanceEvent)
-	if err != nil {
-		return fmt.Errorf("failed to create outbox event: %w", err)
-	}
-
-	return s.outboxRepo.AddToOutboxTx(ctx, tx, *outboxEvent)
 }
 
 func (s *transactionService) publishTransactionResult(ctx context.Context, tx pgx.Tx, transactionID string, processingErr error) error {

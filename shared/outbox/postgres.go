@@ -103,7 +103,7 @@ func (r *postgresRepo) LockEventForProcessing(ctx context.Context, tx pgx.Tx, ev
 func (r *postgresRepo) MarkEventAsPublishedTx(ctx context.Context, tx pgx.Tx, eventID string) error {
 	query := `
 		update outbox_events 
-		set status = 'published', published_at = now() 
+		set status = 'published', published_at = now()
 		where event_id = $1
 	`
 
@@ -114,7 +114,7 @@ func (r *postgresRepo) MarkEventAsPublishedTx(ctx context.Context, tx pgx.Tx, ev
 func (r *postgresRepo) MarkEventAsFailedTx(ctx context.Context, tx pgx.Tx, eventID string, errorMsg string) error {
 	query := `
 		update outbox_events 
-		set status = 'failed', error_message = $2, retry_count = retry_count + 1
+		set status = 'failed', error_message = $2, retry_count = retry_count + 1, updated_at = now()
 		where event_id = $1
 	`
 
