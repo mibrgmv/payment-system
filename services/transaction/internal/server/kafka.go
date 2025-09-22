@@ -58,11 +58,15 @@ func SetupKafkaPublisher(pool *pgxpool.Pool, kafkaCfg sharedkafka.Config) *event
 	})
 
 	publisherConfig := events.PublisherConfig{
-		BatchSize:       100,
-		WorkerCount:     10,
-		ProcessInterval: 5 * time.Second,
-		CleanupInterval: 1 * time.Hour,
-		CleanupDays:     7,
+		BatchSize:         100,
+		WorkerCount:       10,
+		ProcessInterval:   5 * time.Second,
+		RetryInterval:     10 * time.Second,
+		CleanupInterval:   1 * time.Hour,
+		CleanupDays:       7,
+		BaseRetryDelay:    100 * time.Millisecond,
+		MaxRetryBackoff:   5 * time.Second,
+		RetryJitterFactor: 0.2,
 	}
 
 	registry := events.NewPublisherRegistry()

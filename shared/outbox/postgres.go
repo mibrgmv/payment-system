@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -24,8 +25,9 @@ func (r *postgresRepo) AddToOutboxTx(ctx context.Context, tx pgx.Tx, event Event
 			event_type, 
 			payload, 
 			created_at, 
-			topic
-		) values ($1, $2, $3, $4, $5)
+			topic,
+		    max_retries
+		) values ($1, $2, $3, $4, $5, $6)
 	`
 
 	_, err := tx.Exec(ctx, query,
@@ -34,6 +36,7 @@ func (r *postgresRepo) AddToOutboxTx(ctx context.Context, tx pgx.Tx, event Event
 		event.RawPayload,
 		event.CreatedAt,
 		event.Topic,
+		event.MaxRetries,
 	)
 
 	return err
@@ -41,53 +44,78 @@ func (r *postgresRepo) AddToOutboxTx(ctx context.Context, tx pgx.Tx, event Event
 
 func (r *postgresRepo) GetPendingEvents(ctx context.Context, limit int) ([]Event, error) {
 	query := `
-		select event_id, event_type, payload, created_at, topic
-		from outbox_events 
-		where status = 'pending' 
-		order by created_at 
-		limit $1
+		SELECT event_id, event_type, payload, created_at, topic,
+		       status, retry_count, max_retries, error_message, next_retry_at
+		FROM outbox_events 
+		WHERE status = 'pending'
+		ORDER BY created_at 
+		LIMIT $1
 	`
 
+	return r.queryEvents(ctx, query, limit)
+}
+
+func (r *postgresRepo) GetRetryEvents(ctx context.Context, limit int) ([]Event, error) {
+	query := `
+		SELECT event_id, event_type, payload, created_at, topic,
+		       status, retry_count, max_retries, error_message, next_retry_at
+		FROM outbox_events 
+		WHERE status = 'failed' 
+		AND next_retry_at <= NOW()
+		AND retry_count < max_retries
+		ORDER BY next_retry_at
+		LIMIT $1
+	`
+
+	return r.queryEvents(ctx, query, limit)
+}
+
+func (r *postgresRepo) queryEvents(ctx context.Context, query string, limit int) ([]Event, error) {
 	rows, err := r.pool.Query(ctx, query, limit)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query pending events: %w", err)
+		return nil, fmt.Errorf("failed to query events: %w", err)
 	}
 	defer rows.Close()
 
-	var eventsArr []Event
+	var events []Event
 	for rows.Next() {
-		var event Event
-		var payloadBytes []byte
-
-		err := rows.Scan(&event.EventID, &event.EventType, &payloadBytes, &event.CreatedAt, &event.Topic)
+		event, err := r.scanEvent(rows)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan outbox event: %w", err)
+			return nil, err
 		}
-
-		event.RawPayload = payloadBytes
-		eventsArr = append(eventsArr, event)
+		events = append(events, *event)
 	}
 
-	return eventsArr, nil
+	return events, nil
 }
 
 func (r *postgresRepo) LockEventForProcessing(ctx context.Context, tx pgx.Tx, eventID string) (*Event, error) {
 	query := `
-		select event_id, event_type, payload, created_at, topic
+		select event_id, event_type, payload, created_at, topic,
+		       status, retry_count, max_retries, error_message, next_retry_at
 		from outbox_events 
-		where event_id = $1 and status = 'pending'
+		where event_id = $1 
+		  and status in ('pending', 'failed') 
+		  and (next_retry_at is null or next_retry_at <= now())
+		  and retry_count < max_retries
 		for update skip locked
 	`
 
 	var event Event
 	var payloadBytes []byte
-
+	var errorMessage *string
+	var nextRetryAt *time.Time
 	err := tx.QueryRow(ctx, query, eventID).Scan(
 		&event.EventID,
 		&event.EventType,
 		&payloadBytes,
 		&event.CreatedAt,
 		&event.Topic,
+		&event.Status,
+		&event.RetryCount,
+		&event.MaxRetries,
+		&errorMessage,
+		&nextRetryAt,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -97,13 +125,17 @@ func (r *postgresRepo) LockEventForProcessing(ctx context.Context, tx pgx.Tx, ev
 	}
 
 	event.RawPayload = payloadBytes
+	event.ErrorMessage = errorMessage
+	event.NextRetryAt = nextRetryAt
 	return &event, nil
 }
 
 func (r *postgresRepo) MarkEventAsPublishedTx(ctx context.Context, tx pgx.Tx, eventID string) error {
 	query := `
 		update outbox_events 
-		set status = 'published', published_at = now()
+		set status = 'published',
+		    updated_at = now(),
+		    published_at = now()
 		where event_id = $1
 	`
 
@@ -111,24 +143,65 @@ func (r *postgresRepo) MarkEventAsPublishedTx(ctx context.Context, tx pgx.Tx, ev
 	return err
 }
 
-func (r *postgresRepo) MarkEventAsFailedTx(ctx context.Context, tx pgx.Tx, eventID string, errorMsg string) error {
+func (r *postgresRepo) MarkEventAsFailedTx(
+	ctx context.Context,
+	tx pgx.Tx,
+	eventID string,
+	errorMsg string,
+	nextRetryAt time.Time,
+) error {
 	query := `
 		update outbox_events 
-		set status = 'failed', error_message = $2, retry_count = retry_count + 1, updated_at = now()
+		set status = 'failed',
+		    error_message = $2,
+		    retry_count = retry_count + 1,
+		    next_retry_at = $3,
+		    updated_at = now()
 		where event_id = $1
 	`
 
-	_, err := tx.Exec(ctx, query, eventID, errorMsg)
+	_, err := tx.Exec(ctx, query, eventID, errorMsg, nextRetryAt)
 	return err
 }
 
 func (r *postgresRepo) CleanupOldEvents(ctx context.Context, olderThanDays int) error {
 	query := `
 		delete from outbox_events 
-		where status = 'published' 
-		and published_at < now() - interval '1 day' * $1
+		where (status = 'published' and 
+		       published_at < now() - interval '1 day' * $1)
+		   or (status = 'failed' and
+		       retry_count >= max_retries
+		       created_at < now() - interval '1 day' * $1)
 	`
 
 	_, err := r.pool.Exec(ctx, query, olderThanDays)
 	return err
+}
+
+func (r *postgresRepo) scanEvent(rows pgx.Rows) (*Event, error) {
+	var event Event
+	var payloadBytes []byte
+	var errorMessage *string
+	var nextRetryAt *time.Time
+
+	err := rows.Scan(
+		&event.EventID,
+		&event.EventType,
+		&payloadBytes,
+		&event.CreatedAt,
+		&event.Topic,
+		&event.Status,
+		&event.RetryCount,
+		&event.MaxRetries,
+		&errorMessage,
+		&nextRetryAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan outbox event: %w", err)
+	}
+
+	event.RawPayload = payloadBytes
+	event.ErrorMessage = errorMessage
+	event.NextRetryAt = nextRetryAt
+	return &event, nil
 }

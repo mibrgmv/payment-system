@@ -41,14 +41,15 @@ func NewTransactionService(
 }
 
 func (s *transactionService) HandleTransactionCreated(ctx context.Context, tx pgx.Tx, event events.TransactionCreated) error {
-	if err := s.validateInput(ctx, tx, event); err != nil {
-		if publishErr := s.publishTransactionResult(ctx, tx, event.TransactionID, err); publishErr != nil {
+	validationErr := s.validateInput(ctx, tx, event)
+	if errors.Is(validationErr, ErrCurrencyMismatch) || errors.Is(validationErr, ErrInsufficientFunds) {
+		if publishErr := s.publishTransactionResult(ctx, tx, event.TransactionID, validationErr); publishErr != nil {
 			return fmt.Errorf("failed to publish transaction result: %w", publishErr)
 		}
-		if errors.Is(err, ErrCurrencyMismatch) || errors.Is(err, ErrInsufficientFunds) {
-			return nil
-		}
-		return fmt.Errorf("failed to validate transaction created: %w", err)
+		return nil
+	}
+	if validationErr != nil {
+		return fmt.Errorf("failed to validate transaction created: %w", validationErr)
 	}
 
 	var processingErr error
@@ -63,8 +64,8 @@ func (s *transactionService) HandleTransactionCreated(ctx context.Context, tx pg
 		processingErr = fmt.Errorf("unknown transaction type: %s", event.Type)
 	}
 
-	if err := s.publishTransactionResult(ctx, tx, event.TransactionID, processingErr); err != nil {
-		return fmt.Errorf("failed to publish transaction result: %w", err)
+	if publishErr := s.publishTransactionResult(ctx, tx, event.TransactionID, processingErr); publishErr != nil {
+		return fmt.Errorf("failed to publish transaction result: %w", publishErr)
 	}
 
 	return processingErr
@@ -79,6 +80,14 @@ func (s *transactionService) validateInput(ctx context.Context, tx pgx.Tx, event
 		if !exists {
 			return fmt.Errorf("from account %s does not exist", event.FromAccountID)
 		}
+
+		account, err := s.accountRepo.GetAccountTx(ctx, tx, event.FromAccountID)
+		if err != nil {
+			return fmt.Errorf("failed to get to account details: %w", err)
+		}
+		if account.Currency.String() != event.Currency {
+			return ErrCurrencyMismatch
+		}
 	}
 
 	if event.ToAccountID != "" {
@@ -89,9 +98,7 @@ func (s *transactionService) validateInput(ctx context.Context, tx pgx.Tx, event
 		if !exists {
 			return fmt.Errorf("to account %s does not exist", event.ToAccountID)
 		}
-	}
 
-	if event.Currency != "" {
 		account, err := s.accountRepo.GetAccountTx(ctx, tx, event.ToAccountID)
 		if err != nil {
 			return fmt.Errorf("failed to get to account details: %w", err)
