@@ -35,5 +35,4 @@ create index idx_outbox_events_pending on outbox_events (created_at)
 
 create index idx_outbox_events_pending_retry on outbox_events (status, next_retry_at)
     where status = 'failed'
-    and (next_retry_at is null or next_retry_at <= now())
-    and retry_count < max_retries;
+    and next_retry_at is not null;
