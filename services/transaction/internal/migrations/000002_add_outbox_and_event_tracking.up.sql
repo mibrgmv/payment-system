@@ -30,7 +30,7 @@ create index idx_outbox_events_status on outbox_events (status);
 
 create index idx_outbox_events_created_at on outbox_events (created_at);
 
-create index idx_outbox_events_pending ON outbox_events (created_at)
+create index idx_outbox_events_pending on outbox_events (created_at)
     where status = 'pending';
 
 create index idx_outbox_events_pending_retry on outbox_events (status, next_retry_at)

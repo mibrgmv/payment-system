@@ -14,21 +14,6 @@ services:
     networks:
       - payment-system-network
 
-  account-postgres-test:
-    container_name: account-postgres-test
-    image: postgres:latest
-    environment:
-      - POSTGRES_USER=mazafaker322
-      - POSTGRES_PASSWORD=CEUvt7$12g
-      - POSTGRES_DB=account_service_test
-    ports:
-      - "5434:5432"
-    restart: unless-stopped
-    volumes:
-      - account-postgres-test-data:/var/lib/postgresql/data
-    networks:
-      - payment-system-network
-
   transaction-postgres:
     container_name: transaction-postgres
     image: postgres:latest
@@ -41,21 +26,6 @@ services:
     restart: unless-stopped
     volumes:
       - transaction-postgres-data:/var/lib/postgresql/data
-    networks:
-      - payment-system-network
-
-  transaction-postgres-test:
-    container_name: transaction-postgres-test
-    image: postgres:latest
-    environment:
-      - POSTGRES_USER=kokojambo
-      - POSTGRES_PASSWORD=V(&IYBo97t6f
-      - POSTGRES_DB=transaction_service_test
-    ports:
-      - "5435:5432"
-    restart: unless-stopped
-    volumes:
-      - transaction-postgres-test-data:/var/lib/postgresql/data
     networks:
       - payment-system-network
 
@@ -101,9 +71,7 @@ services:
 
 volumes:
   account-postgres-data:
-  account-postgres-test-data:
   transaction-postgres-data:
-  transaction-postgres-test-data:
   kafka-data:
 
 networks:

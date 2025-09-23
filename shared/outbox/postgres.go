@@ -44,12 +44,12 @@ func (r *postgresRepo) AddToOutboxTx(ctx context.Context, tx pgx.Tx, event Event
 
 func (r *postgresRepo) GetPendingEvents(ctx context.Context, limit int) ([]Event, error) {
 	query := `
-		SELECT event_id, event_type, payload, created_at, topic,
+		select event_id, event_type, payload, created_at, topic,
 		       status, retry_count, max_retries, error_message, next_retry_at
-		FROM outbox_events 
-		WHERE status = 'pending'
-		ORDER BY created_at 
-		LIMIT $1
+		from outbox_events 
+		where status = 'pending'
+		order by created_at 
+		limit $1
 	`
 
 	return r.queryEvents(ctx, query, limit)
@@ -57,14 +57,14 @@ func (r *postgresRepo) GetPendingEvents(ctx context.Context, limit int) ([]Event
 
 func (r *postgresRepo) GetRetryEvents(ctx context.Context, limit int) ([]Event, error) {
 	query := `
-		SELECT event_id, event_type, payload, created_at, topic,
+		select event_id, event_type, payload, created_at, topic,
 		       status, retry_count, max_retries, error_message, next_retry_at
-		FROM outbox_events 
-		WHERE status = 'failed' 
-		AND next_retry_at <= NOW()
-		AND retry_count < max_retries
-		ORDER BY next_retry_at
-		LIMIT $1
+		from outbox_events 
+		where status = 'failed' 
+		and next_retry_at <= NOW()
+		and retry_count < max_retries
+		order by next_retry_at
+		limit $1
 	`
 
 	return r.queryEvents(ctx, query, limit)
