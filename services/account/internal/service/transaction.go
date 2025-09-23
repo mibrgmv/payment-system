@@ -14,8 +14,9 @@ import (
 )
 
 var (
-	ErrInsufficientFunds = errors.New("insufficient funds")
-	ErrCurrencyMismatch  = errors.New("currency mismatch")
+	ErrNonexistentAccountID = errors.New("nonexistent account id")
+	ErrInsufficientFunds    = errors.New("insufficient funds")
+	ErrCurrencyMismatch     = errors.New("currency mismatch")
 )
 
 type TransactionService interface {
@@ -41,107 +42,54 @@ func NewTransactionService(
 }
 
 func (s *transactionService) HandleTransactionCreated(ctx context.Context, tx pgx.Tx, event events.TransactionCreated) error {
-	validationErr := s.validateInput(ctx, tx, event)
-	if errors.Is(validationErr, ErrCurrencyMismatch) || errors.Is(validationErr, ErrInsufficientFunds) {
-		if publishErr := s.publishTransactionResult(ctx, tx, event.TransactionID, validationErr); publishErr != nil {
-			return fmt.Errorf("failed to publish transaction result: %w", publishErr)
-		}
-		return nil
-	}
-	if validationErr != nil {
-		return fmt.Errorf("failed to validate transaction created: %w", validationErr)
-	}
-
 	var processingErr error
 	switch event.Type {
 	case "transfer":
-		processingErr = s.processTransfer(ctx, tx, event)
+		processingErr = s.processBalanceChange(ctx, tx, event.FromAccountID, -event.Amount, event.Currency)
+		if processingErr != nil {
+			break
+		}
+		processingErr = s.processBalanceChange(ctx, tx, event.ToAccountID, event.Amount, event.Currency)
 	case "deposit":
-		processingErr = s.processDeposit(ctx, tx, event)
+		processingErr = s.processBalanceChange(ctx, tx, event.ToAccountID, event.Amount, event.Currency)
 	case "withdrawal":
-		processingErr = s.processWithdrawal(ctx, tx, event)
+		processingErr = s.processBalanceChange(ctx, tx, event.FromAccountID, -event.Amount, event.Currency)
 	default:
 		processingErr = fmt.Errorf("unknown transaction type: %s", event.Type)
 	}
 
+	if processingErr != nil &&
+		!(errors.Is(processingErr, ErrNonexistentAccountID) || errors.Is(processingErr, ErrInsufficientFunds) || errors.Is(processingErr, ErrCurrencyMismatch)) {
+		return processingErr
+	}
 	if publishErr := s.publishTransactionResult(ctx, tx, event.TransactionID, processingErr); publishErr != nil {
 		return fmt.Errorf("failed to publish transaction result: %w", publishErr)
 	}
 
-	return processingErr
-}
-
-func (s *transactionService) validateInput(ctx context.Context, tx pgx.Tx, event events.TransactionCreated) error {
-	if event.FromAccountID != "" {
-		exists, err := s.accountRepo.AccountExistsTx(ctx, tx, event.FromAccountID)
-		if err != nil {
-			return fmt.Errorf("failed to check from account: %w", err)
-		}
-		if !exists {
-			return fmt.Errorf("from account %s does not exist", event.FromAccountID)
-		}
-
-		account, err := s.accountRepo.GetAccountTx(ctx, tx, event.FromAccountID)
-		if err != nil {
-			return fmt.Errorf("failed to get to account details: %w", err)
-		}
-		if account.Currency.String() != event.Currency {
-			return ErrCurrencyMismatch
-		}
-	}
-
-	if event.ToAccountID != "" {
-		exists, err := s.accountRepo.AccountExistsTx(ctx, tx, event.ToAccountID)
-		if err != nil {
-			return fmt.Errorf("failed to check to account: %w", err)
-		}
-		if !exists {
-			return fmt.Errorf("to account %s does not exist", event.ToAccountID)
-		}
-
-		account, err := s.accountRepo.GetAccountTx(ctx, tx, event.ToAccountID)
-		if err != nil {
-			return fmt.Errorf("failed to get to account details: %w", err)
-		}
-		if account.Currency.String() != event.Currency {
-			return ErrCurrencyMismatch
-		}
-	}
-
 	return nil
 }
 
-func (s *transactionService) processTransfer(ctx context.Context, tx pgx.Tx, event events.TransactionCreated) error {
-	if _, err := s.balanceRepo.UpdateBalanceTx(ctx, tx, event.FromAccountID, -event.Amount); err != nil {
-		return fmt.Errorf("failed to transfer from account: %w", err)
+func (s *transactionService) processBalanceChange(ctx context.Context, tx pgx.Tx, accountID string, amount float64, currency string) error {
+	exists, err := s.accountRepo.AccountExistsTx(ctx, tx, accountID)
+	if err != nil {
+		return fmt.Errorf("failed to check account existence: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("%w: %s", ErrNonexistentAccountID, accountID)
 	}
 
-	if _, err := s.balanceRepo.UpdateBalanceTx(ctx, tx, event.ToAccountID, event.Amount); err != nil {
-		return fmt.Errorf("failed to transfer to account: %w", err)
-	}
-
-	return nil
-}
-
-func (s *transactionService) processDeposit(ctx context.Context, tx pgx.Tx, event events.TransactionCreated) error {
-	if _, err := s.balanceRepo.UpdateBalanceTx(ctx, tx, event.ToAccountID, event.Amount); err != nil {
-		return fmt.Errorf("failed to deposit to account: %w", err)
-	}
-
-	return nil
-}
-
-func (s *transactionService) processWithdrawal(ctx context.Context, tx pgx.Tx, event events.TransactionCreated) error {
-	balance, err := s.balanceRepo.GetBalanceTx(ctx, tx, event.FromAccountID)
+	balance, err := s.balanceRepo.GetBalanceTx(ctx, tx, accountID)
 	if err != nil {
 		return fmt.Errorf("failed to get balance: %w", err)
 	}
-
-	if balance.Amount < event.Amount {
-		return fmt.Errorf("insufficient funds: available %.2f, requested %.2f", balance.Amount, event.Amount)
+	if currency != balance.Currency.String() {
+		return ErrCurrencyMismatch
+	}
+	if amount < 0 && balance.Amount < -amount {
+		return ErrInsufficientFunds
 	}
 
-	if _, err := s.balanceRepo.UpdateBalanceTx(ctx, tx, event.FromAccountID, -event.Amount); err != nil {
+	if _, err := s.balanceRepo.UpdateBalanceTx(ctx, tx, accountID, amount); err != nil {
 		return fmt.Errorf("failed to withdraw from account: %w", err)
 	}
 
