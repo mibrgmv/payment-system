@@ -3,12 +3,11 @@ create table processed_events
     event_id       varchar(255) primary key,
     event_type     varchar(100) not null,
     source_service varchar(100) not null,
-    processed_at   timestamptz  not null default now(),
-    created_at     timestamptz  not null default now()
+    processed_at   timestamptz  not null default now()
 );
 
 create index idx_processed_events_event_id on processed_events (event_id);
-create index idx_processed_events_created_at on processed_events (created_at);
+create index idx_processed_events_processed_at on processed_events (processed_at);
 create index idx_processed_events_source_service on processed_events (source_service);
 
 create table outbox_events

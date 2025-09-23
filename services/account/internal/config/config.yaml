@@ -18,4 +18,3 @@ kafka:
   topics:
     transactions: "transactions.created"
     results: "transactions.results"
-    balances: "balances.updated"

@@ -49,7 +49,7 @@ func (r *postgresRepo) IsEventProcessed(ctx context.Context, eventID string) (bo
 }
 
 func (r *postgresRepo) CleanupOldEvents(ctx context.Context, olderThanDays int) error {
-	sql := `delete from processed_events where created_at < now() - interval '1 day' * $1`
+	sql := `delete from processed_events where processed_at < now() - interval '1 day' * $1`
 
 	_, err := r.pool.Exec(ctx, sql, olderThanDays)
 	if err != nil {

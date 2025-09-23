@@ -18,6 +18,9 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// todo fail/retry
+	// todo gateway
+	// todo makefile for tests
 	var cfg config.Config
 	err := config.Load(&cfg)
 	if err != nil {
@@ -35,13 +38,13 @@ func main() {
 		log.Fatal("Failed to run migrations:", err)
 	}
 
-	kafkaProcessor := server.SetupKafkaProcessor(pool, cfg.Kafka)
-	if err := kafkaProcessor.Start(ctx); err != nil {
-		log.Fatal("Failed to start Kafka processor:", err)
-	}
-
-	kafkaPublisher := server.SetupKafkaPublisher(pool, cfg.Kafka)
-	kafkaPublisher.Start(ctx)
+	//kafkaProcessor := server.SetupKafkaProcessor(pool, cfg.Kafka)
+	//if err := kafkaProcessor.Start(ctx); err != nil {
+	//	log.Fatal("Failed to start Kafka processor:", err)
+	//}
+	//
+	//kafkaPublisher := server.SetupKafkaPublisher(pool, cfg.Kafka)
+	//kafkaPublisher.Start(ctx)
 
 	s := server.NewGrpcServer(pool)
 	lis, err := net.Listen("tcp", cfg.Server.GetAddr())

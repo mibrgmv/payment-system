@@ -34,7 +34,7 @@ func NewConsumer(cfg ConsumerConfig, handler MessageHandler) *Consumer {
 		MinBytes:       cfg.MinBytes,
 		MaxBytes:       cfg.MaxBytes,
 		MaxWait:        cfg.MaxWait,
-		CommitInterval: 1 * time.Second,
+		CommitInterval: 0, // manual
 		Logger:         kafka.LoggerFunc(log.Printf),
 		ErrorLogger:    kafka.LoggerFunc(log.Printf),
 	})
@@ -64,6 +64,13 @@ func (c *Consumer) consumeLoop(ctx context.Context) {
 
 			if err := c.processMessage(ctx, msg); err != nil {
 				log.Printf("Error processing message: %v", err)
+				continue
+			}
+
+			if err := c.reader.CommitMessages(ctx, msg); err != nil {
+				log.Printf("Failed to commit message: %v", err)
+			} else {
+				log.Printf("Successfully processed and committed message at offset %d", msg.Offset)
 			}
 		}
 	}
@@ -75,10 +82,6 @@ func (c *Consumer) processMessage(ctx context.Context, msg kafka.Message) error 
 
 	if err := c.handler(processCtx, msg); err != nil {
 		return fmt.Errorf("message handler failed: %w", err)
-	}
-
-	if err := c.reader.CommitMessages(ctx, msg); err != nil {
-		return fmt.Errorf("failed to commit message: %w", err)
 	}
 
 	return nil
