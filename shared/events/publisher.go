@@ -72,7 +72,7 @@ func (p *Publisher) publishLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if err := p.processBatch(ctx, p.outboxRepo.GetPendingEvents); err != nil {
+			if err := p.ProcessBatch(ctx, p.outboxRepo.GetPendingEvents); err != nil {
 				log.Printf("Error processing pending events: %v", err)
 			}
 		}
@@ -88,7 +88,7 @@ func (p *Publisher) retryLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if err := p.processBatch(ctx, p.outboxRepo.GetRetryEvents); err != nil {
+			if err := p.ProcessBatch(ctx, p.outboxRepo.GetRetryEvents); err != nil {
 				log.Printf("Error processing retry events: %v", err)
 			}
 		}
@@ -111,7 +111,7 @@ func (p *Publisher) cleanupLoop(ctx context.Context) {
 	}
 }
 
-func (p *Publisher) processBatch(ctx context.Context, getEventsFunc func(context.Context, int) ([]outbox.Event, error)) error {
+func (p *Publisher) ProcessBatch(ctx context.Context, getEventsFunc func(context.Context, int) ([]outbox.Event, error)) error {
 	events, err := getEventsFunc(ctx, p.config.BatchSize)
 	if err != nil {
 		return fmt.Errorf("failed to get events: %w", err)
@@ -126,7 +126,7 @@ func (p *Publisher) processBatch(ctx context.Context, getEventsFunc func(context
 	for w := 0; w < workerCount; w++ {
 		go func() {
 			for event := range jobs {
-				results <- p.processSingle(ctx, event)
+				results <- p.ProcessSingle(ctx, event)
 			}
 		}()
 	}
@@ -149,7 +149,7 @@ func (p *Publisher) processBatch(ctx context.Context, getEventsFunc func(context
 	return nil
 }
 
-func (p *Publisher) processSingle(ctx context.Context, event outbox.Event) error {
+func (p *Publisher) ProcessSingle(ctx context.Context, event outbox.Event) error {
 	err := p.db.WithTransaction(ctx, func(tx pgx.Tx) error {
 		lockedEvent, err := p.outboxRepo.LockEventForProcessing(ctx, tx, event.EventID)
 		if err != nil {
