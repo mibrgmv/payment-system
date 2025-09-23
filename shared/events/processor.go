@@ -54,7 +54,7 @@ func (p *Processor) Start(ctx context.Context) error {
 		}
 
 		consumer := kafka.NewConsumer(consumerConfig, func(ctx context.Context, message kafkago.Message) error {
-			return p.process(ctx, message, handler)
+			return p.Process(ctx, message.Value, handler)
 		})
 
 		go consumer.Start(ctx)
@@ -63,12 +63,12 @@ func (p *Processor) Start(ctx context.Context) error {
 	return nil
 }
 
-func (p *Processor) process(
+func (p *Processor) Process(
 	ctx context.Context,
-	message kafkago.Message,
+	eventData []byte,
 	eventHandler ProcessorEventHandler,
 ) error {
-	eventID, err := eventHandler.GetEventID(message.Value)
+	eventID, err := eventHandler.GetEventID(eventData)
 	if err != nil {
 		return fmt.Errorf("failed to get event ID: %w", err)
 	}
@@ -91,7 +91,7 @@ func (p *Processor) process(
 			return fmt.Errorf("failed to mark event as processed: %w", err)
 		}
 
-		if err := eventHandler.HandleEvent(ctx, tx, message.Value); err != nil {
+		if err := eventHandler.HandleEvent(ctx, tx, eventData); err != nil {
 			return fmt.Errorf("failed to process event: %w", err)
 		}
 

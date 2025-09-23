@@ -58,41 +58,41 @@ func runMigrations(pool *pgxpool.Pool) error {
 	ctx := context.Background()
 
 	queries := []string{
-		`CREATE TYPE currency_code AS ENUM (
+		`create type currency_code as enum (
     		'RUB',
     		'USD',
     		'EUR'
 		)`,
-		`CREATE TABLE IF NOT EXISTS accounts (
-			account_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			user_id UUID NOT NULL,
-			currency currency_code NOT NULL,
-			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+		`create table if not exists accounts (
+			account_id uuid primary key default gen_random_uuid(),
+			user_id uuid not null,
+			currency currency_code not null,
+			created_at timestamptz not null default now(),
+			updated_at timestamptz not null default now()
 		)`,
-		`CREATE TABLE IF NOT EXISTS balances (
-			account_id UUID PRIMARY KEY REFERENCES accounts (account_id),
-			amount DECIMAL(19, 4) NOT NULL DEFAULT 0 CHECK (amount >= 0),
-			last_updated TIMESTAMPTZ NOT NULL DEFAULT NOW()
+		`create table if not exists balances (
+			account_id uuid primary key references accounts (account_id),
+			amount decimal(19, 4) not null default 0 check (amount >= 0),
+			last_updated timestamptz not null default now()
 		)`,
-		`CREATE TABLE IF NOT EXISTS processed_events (
-			event_id VARCHAR(255) PRIMARY KEY,
-			event_type VARCHAR(100) NOT NULL,
-			source_service VARCHAR(100) NOT NULL,
-			processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+		`create table if not exists processed_events (
+			event_id varchar(255) primary key,
+			event_type varchar(100) not null,
+			source_service varchar(100) not null,
+			processed_at timestamptz not null default now()
 		)`,
-		`CREATE TABLE IF NOT EXISTS outbox_events (
-			event_id VARCHAR(255) PRIMARY KEY,
-			event_type VARCHAR(100) NOT NULL,
-			topic VARCHAR(255) NOT NULL,
-			payload JSONB NOT NULL,
-			status VARCHAR(50) NOT NULL DEFAULT 'pending',
-			retry_count INTEGER NOT NULL DEFAULT 0,
-			max_retries INTEGER NOT NULL DEFAULT 5,
+		`create table if not exists outbox_events (
+			event_id varchar(255) primary key,
+			event_type varchar(100) not null,
+			topic varchar(255) not null,
+			payload jsonb not null,
+			status varchar(50) not null default 'pending',
+			retry_count integer not null default 0,
+			max_retries integer not null default 5,
 			error_message TEXT,
-			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-			published_at TIMESTAMPTZ,
-			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			created_at timestamptz not null default now(),
+			published_at timestamptz,
+			updated_at timestamptz not null default now(),
 			next_retry_at TIMESTAMPTZ
 		)`,
 	}
