@@ -23,7 +23,7 @@ create table outbox_events
     created_at    timestamptz  not null default now(),
     published_at  timestamptz,
     updated_at    timestamptz  not null default now(),
-    next_retry_at timestamptz,
+    next_retry_at timestamptz
 );
 
 create index idx_outbox_events_status on outbox_events (status);

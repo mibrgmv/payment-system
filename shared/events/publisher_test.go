@@ -93,16 +93,14 @@ func setupTestDB(t *testing.T) (*pgxpool.Pool, func()) {
 			updated_at timestamptz not null default now(),
 			next_retry_at timestamptz
 		);
-			
-		create index if not exists idx_outbox_events_status on outbox_events (status);
-		create index if not exists idx_outbox_events_created_at on outbox_events (created_at);
-		create index if not exists idx_outbox_events_pending on outbox_events (created_at) where status = 'pending';
 	`)
 	require.NoError(t, err)
 
 	cleanup := func() {
 		pool.Close()
-		_ = pgContainer.Terminate(ctx)
+		if err := pgContainer.Terminate(ctx); err != nil {
+			t.Logf("Failed to terminate container: %v", err)
+		}
 	}
 
 	return pool, cleanup

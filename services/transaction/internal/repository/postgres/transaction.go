@@ -208,8 +208,11 @@ func (r *transactionRepo) UpdateTransactionStatusTx(ctx context.Context, tx pgx.
 
 func (r *transactionRepo) updateTransactionStatus(ctx context.Context, querier postgres.Querier, transactionID string, status models.TransactionStatus, errorMessage *string) error {
 	sql := `
-		update transactions 
-		set status = $1, error_message = $2, updated_at = now()
+		update transactions
+		set status = $1::transaction_status,
+		    error_message = $2,
+		    updated_at = now(),
+		    completed_at = case when $1::transaction_status in ('completed', 'failed') then now() else completed_at end
 		where transaction_id = $3
 	`
 

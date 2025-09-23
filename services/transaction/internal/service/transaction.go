@@ -16,10 +16,11 @@ import (
 )
 
 var (
-	ErrInvalidTransaction  = errors.New("invalid transaction")
-	ErrInsufficientFunds   = errors.New("insufficient funds")
-	ErrIdempotencyConflict = errors.New("idempotency key conflict")
-	ErrTransactionNotFound = repository.ErrTransactionNotFound
+	ErrInvalidTransaction       = errors.New("invalid transaction")
+	ErrInvalidTransactionStatus = errors.New("invalid transaction status")
+	ErrInsufficientFunds        = errors.New("insufficient funds")
+	ErrIdempotencyConflict      = errors.New("idempotency key conflict")
+	ErrTransactionNotFound      = repository.ErrTransactionNotFound
 )
 
 type TransactionService interface {
@@ -221,11 +222,16 @@ func (s *transactionService) HandleTransactionResult(ctx context.Context, tx pgx
 	var status models.TransactionStatus
 	var errorMsg *string
 
-	if event.Status == "completed" {
+	switch event.Status {
+	case "completed":
 		status = models.TransactionStatusCompleted
-	} else {
+	case "failed":
 		status = models.TransactionStatusFailed
 		errorMsg = &event.FailureReason
+	default:
+		status = models.TransactionStatusFailed
+		msg := ErrInvalidTransactionStatus.Error()
+		errorMsg = &msg
 	}
 
 	err := s.transactionRepo.UpdateTransactionStatusTx(ctx, tx, event.TransactionID, status, errorMsg)
