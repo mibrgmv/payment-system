@@ -4,7 +4,7 @@ create type currency_code as enum (
     'EUR'
 );
 
-create table accounts
+create table if not exists accounts
 (
     account_id uuid primary key       default gen_random_uuid(),
     user_id    uuid          not null,
@@ -15,7 +15,7 @@ create table accounts
 
 create index idx_accounts_user_id on accounts (user_id);
 
-create table balances
+create table if not exists balances
 (
     account_id   uuid primary key references accounts (account_id),
     amount       decimal(19, 4) not null default 0 check (amount >= 0),
@@ -24,19 +24,15 @@ create table balances
 
 create index idx_balances_amount on balances (amount);
 
-create
-or replace function update_updated_at()
+create or replace function update_updated_at()
 returns trigger as $$
 begin
-    new.updated_at
-= now();
-return new;
+    new.updated_at= now();
+    return new;
 end;
-$$
-language plpgsql;
+$$ language plpgsql;
 
 create trigger accounts_updated_at_trigger
-    before update
-    on accounts
+    before update on accounts
     for each row
     execute function update_updated_at();

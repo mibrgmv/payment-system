@@ -97,6 +97,8 @@ func setupTestContainer(t *testing.T) (*pgxpool.Pool, func()) {
 }
 
 func TestProcessor_Process_Success(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestContainer(t)
 	defer cleanup()
 
@@ -124,6 +126,8 @@ func TestProcessor_Process_Success(t *testing.T) {
 }
 
 func TestProcessor_Process_AlreadyProcessed(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestContainer(t)
 	defer cleanup()
 
@@ -149,6 +153,8 @@ func TestProcessor_Process_AlreadyProcessed(t *testing.T) {
 }
 
 func TestProcessor_Process_HandlerError(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestContainer(t)
 	defer cleanup()
 
@@ -178,6 +184,8 @@ func TestProcessor_Process_HandlerError(t *testing.T) {
 }
 
 func TestProcessor_Process_ConcurrentProcessing(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestContainer(t)
 	defer cleanup()
 

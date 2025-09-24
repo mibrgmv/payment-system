@@ -1,4 +1,4 @@
-create table processed_events
+create table if not exists processed_events
 (
     event_id       varchar(255) primary key,
     event_type     varchar(100) not null,
@@ -10,7 +10,7 @@ create index idx_processed_events_event_id on processed_events (event_id);
 create index idx_processed_events_processed_at on processed_events (processed_at);
 create index idx_processed_events_source_service on processed_events (source_service);
 
-create table outbox_events
+create table if not exists outbox_events
 (
     event_id      varchar(255) primary key,
     event_type    varchar(100) not null,

@@ -194,7 +194,7 @@ func (r *accountRepo) UpdateAccount(ctx context.Context, account *models.Account
 
 	result, err := tx.Exec(ctx, `
 		update accounts 
-		set currency = $1, updated_at = now() 
+		set currency = $1
 		where account_id = $2
 	`, account.Currency.String(), account.AccountID)
 

@@ -4,38 +4,24 @@ import (
 	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
 )
 
-func createMigrationInstance(pool *pgxpool.Pool, migrationPath string) (*migrate.Migrate, error) {
-	sqlDB := stdlib.OpenDBFromPool(pool)
-	defer sqlDB.Close()
-
-	driver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create migration driver: %w", err)
-	}
-
-	m, err := migrate.NewWithDatabaseInstance(
+func MigrateUp(connStr, migrationPath string) error {
+	m, err := migrate.New(
 		fmt.Sprintf("file://%s", migrationPath),
-		"postgres",
-		driver,
+		connStr,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create migration instance: %w", err)
+		return fmt.Errorf("failed to create migration instance: %w", err)
 	}
-
-	return m, nil
-}
-
-func MigrateUp(pool *pgxpool.Pool, migrationPath string) error {
-	m, err := createMigrationInstance(pool, migrationPath)
-	if err != nil {
-		return err
-	}
+	defer func() {
+		sourceErr, dbErr := m.Close()
+		if sourceErr != nil || dbErr != nil {
+			// Log but don't fail on cleanup errors
+		}
+	}()
 
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return fmt.Errorf("failed to run migrations: %w", err)
@@ -44,11 +30,20 @@ func MigrateUp(pool *pgxpool.Pool, migrationPath string) error {
 	return nil
 }
 
-func MigrateDown(pool *pgxpool.Pool, migrationPath string) error {
-	m, err := createMigrationInstance(pool, migrationPath)
+func MigrateDown(connStr, migrationPath string) error {
+	m, err := migrate.New(
+		fmt.Sprintf("file://%s", migrationPath),
+		connStr,
+	)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create migration instance: %w", err)
 	}
+	defer func() {
+		sourceErr, dbErr := m.Close()
+		if sourceErr != nil || dbErr != nil {
+			// Log but don't fail on cleanup errors
+		}
+	}()
 
 	if err := m.Down(); err != nil && err != migrate.ErrNoChange {
 		return fmt.Errorf("failed to run migrations down: %w", err)

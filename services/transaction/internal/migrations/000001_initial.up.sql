@@ -18,7 +18,7 @@ create type currency_code as enum (
     'EUR'
 );
 
-create table transactions
+create table if not exists transactions
 (
     transaction_id  uuid primary key            default gen_random_uuid(),
     type            transaction_type   not null,

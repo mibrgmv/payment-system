@@ -107,6 +107,8 @@ func setupTestDB(t *testing.T) (*pgxpool.Pool, func()) {
 }
 
 func TestPublisher_ProcessSingle_Success(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestDB(t)
 	defer cleanup()
 
@@ -168,6 +170,8 @@ func TestPublisher_ProcessSingle_Success(t *testing.T) {
 }
 
 func TestPublisher_ProcessSingle_RetryOnFailure(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestDB(t)
 	defer cleanup()
 
@@ -219,6 +223,8 @@ func TestPublisher_ProcessSingle_RetryOnFailure(t *testing.T) {
 }
 
 func TestPublisher_ProcessSingle_NoHandler(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestDB(t)
 	defer cleanup()
 
@@ -279,6 +285,8 @@ func TestPublisher_ProcessSingle_NoHandler(t *testing.T) {
 }
 
 func TestPublisher_BatchProcessing(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestDB(t)
 	defer cleanup()
 

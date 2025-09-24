@@ -3,6 +3,8 @@ package consumer_handlers_test
 import (
 	"context"
 	"encoding/json"
+	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -13,6 +15,7 @@ import (
 	"github.com/mibrgmv/payment-service/services/account/internal/repository/postgres"
 	"github.com/mibrgmv/payment-service/services/account/internal/service"
 	"github.com/mibrgmv/payment-service/shared/outbox"
+	sharedpostgres "github.com/mibrgmv/payment-service/shared/postgres"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -41,7 +44,12 @@ func setupTestContainer(t *testing.T) (*pgxpool.Pool, func()) {
 	pool, err := pgxpool.New(ctx, connStr)
 	require.NoError(t, err)
 
-	err = runMigrations(pool)
+	_, b, _, _ := runtime.Caller(0)
+	basepath := filepath.Dir(b)
+	migrationPath := filepath.Join(basepath, "..", "..", "migrations")
+	if err := sharedpostgres.MigrateUp(connStr, migrationPath); err != nil {
+		t.Fatalf("Failed to run migrations: %v", err)
+	}
 	require.NoError(t, err)
 
 	cleanup := func() {
@@ -54,69 +62,16 @@ func setupTestContainer(t *testing.T) (*pgxpool.Pool, func()) {
 	return pool, cleanup
 }
 
-func runMigrations(pool *pgxpool.Pool) error {
-	ctx := context.Background()
-
-	queries := []string{
-		`create type currency_code as enum (
-    		'RUB',
-    		'USD',
-    		'EUR'
-		)`,
-		`create table if not exists accounts (
-			account_id uuid primary key default gen_random_uuid(),
-			user_id uuid not null,
-			currency currency_code not null,
-			created_at timestamptz not null default now(),
-			updated_at timestamptz not null default now()
-		)`,
-		`create table if not exists balances (
-			account_id uuid primary key references accounts (account_id),
-			amount decimal(19, 4) not null default 0 check (amount >= 0),
-			last_updated timestamptz not null default now()
-		)`,
-		`create table if not exists processed_events (
-			event_id varchar(255) primary key,
-			event_type varchar(100) not null,
-			source_service varchar(100) not null,
-			processed_at timestamptz not null default now()
-		)`,
-		`create table if not exists outbox_events (
-			event_id varchar(255) primary key,
-			event_type varchar(100) not null,
-			topic varchar(255) not null,
-			payload jsonb not null,
-			status varchar(50) not null default 'pending',
-			retry_count integer not null default 0,
-			max_retries integer not null default 5,
-			error_message TEXT,
-			created_at timestamptz not null default now(),
-			published_at timestamptz,
-			updated_at timestamptz not null default now(),
-			next_retry_at TIMESTAMPTZ
-		)`,
-	}
-
-	for _, query := range queries {
-		_, err := pool.Exec(ctx, query)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func setupTestAccount(t *testing.T, pool *pgxpool.Pool, accountID, userID string, balance float64) {
 	ctx := context.Background()
 
 	_, err := pool.Exec(ctx,
-		`INSERT INTO accounts (account_id, user_id, currency) VALUES ($1, $2, 'USD')`,
+		`insert into accounts (account_id, user_id, currency) values ($1, $2, 'USD')`,
 		accountID, userID)
 	require.NoError(t, err)
 
 	_, err = pool.Exec(ctx,
-		`INSERT INTO balances (account_id, amount) VALUES ($1, $2)`,
+		`insert into balances (account_id, amount) values ($1, $2)`,
 		accountID, balance)
 	require.NoError(t, err)
 }
