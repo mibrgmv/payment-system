@@ -26,8 +26,8 @@ import (
 func setupTestContainer(t *testing.T) (*pgxpool.Pool, func()) {
 	ctx := context.Background()
 
-	pgContainer, err := postgrestest.RunContainer(ctx,
-		testcontainers.WithImage("postgres:15-alpine"),
+	pgContainer, err := postgrestest.Run(ctx,
+		"postgres:15-alpine",
 		postgrestest.WithDatabase("testdb"),
 		postgrestest.WithUsername("testuser"),
 		postgrestest.WithPassword("testpass"),
@@ -77,6 +77,8 @@ func setupTestAccount(t *testing.T, pool *pgxpool.Pool, accountID, userID string
 }
 
 func TestTransactionCreatedHandler_HandleEvent_Transfer_Success(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestContainer(t)
 	defer cleanup()
 
@@ -144,6 +146,8 @@ func TestTransactionCreatedHandler_HandleEvent_Transfer_Success(t *testing.T) {
 }
 
 func TestTransactionCreatedHandler_HandleEvent_Deposit_Success(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestContainer(t)
 	defer cleanup()
 
@@ -194,6 +198,8 @@ func TestTransactionCreatedHandler_HandleEvent_Deposit_Success(t *testing.T) {
 }
 
 func TestTransactionCreatedHandler_HandleEvent_InsufficientFunds(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestContainer(t)
 	defer cleanup()
 
@@ -254,6 +260,8 @@ func TestTransactionCreatedHandler_HandleEvent_InsufficientFunds(t *testing.T) {
 }
 
 func TestTransactionCreatedHandler_HandleEvent_AccountNotFound(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestContainer(t)
 	defer cleanup()
 
@@ -304,6 +312,8 @@ func TestTransactionCreatedHandler_HandleEvent_AccountNotFound(t *testing.T) {
 }
 
 func TestTransactionCreatedHandler_HandleEvent_InvalidJSON(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestContainer(t)
 	defer cleanup()
 
@@ -328,6 +338,8 @@ func TestTransactionCreatedHandler_HandleEvent_InvalidJSON(t *testing.T) {
 }
 
 func TestTransactionCreatedHandler_GetEventID_Success(t *testing.T) {
+	t.Parallel()
+
 	balanceRepo := postgres.NewBalanceRepository(nil)
 	accountRepo := postgres.NewAccountRepository(nil)
 	outboxRepo := outbox.NewPostgresRepository(nil)
@@ -343,6 +355,8 @@ func TestTransactionCreatedHandler_GetEventID_Success(t *testing.T) {
 }
 
 func TestTransactionCreatedHandler_GetEventID_InvalidJSON(t *testing.T) {
+	t.Parallel()
+
 	balanceRepo := postgres.NewBalanceRepository(nil)
 	accountRepo := postgres.NewAccountRepository(nil)
 	outboxRepo := outbox.NewPostgresRepository(nil)

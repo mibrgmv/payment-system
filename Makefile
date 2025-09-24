@@ -1,13 +1,28 @@
 SERVICES := account transaction gateway
 
-.PHONY: help proto-all proto-clean $(addprefix proto-,$(SERVICES))
+.PHONY: \
+	help deps \
+	proto-all proto-clean $(addprefix proto-,$(SERVICES)) \
+	test-account test-account-kafka \
+	test-transaction test-transaction-kafka \
+	test-gateway \
+	test-shared test-shared-events \
+	test
 
 help:
 	@echo "Available targets:"
-	@echo "  make deps              - Install dependencies"
-	@echo "  make proto-all         - Generate all protobuf code"
-	@echo "  make proto-account     - Generate account service protobuf"
-	@echo "  make proto-transaction - Generate transaction service protobuf"
+	@echo "  make deps                    - Install dependencies"
+	@echo "  make proto                   - Generate all protobuf code"
+	@echo "  make proto-account           - Generate account service protobuf"
+	@echo "  make proto-transaction       - Generate transaction service protobuf"
+	@echo "  make test                    - Run all tests"
+	@echo "  make test-account            - Run account service tests"
+	@echo "  make test-account-kafka      - Run account Kafka handler tests"
+	@echo "  make test-transaction        - Run transaction service tests"
+	@echo "  make test-transaction-kafka  - Run transaction Kafka handler tests"
+	@echo "  make test-gateway            - Run gateway service tests"
+	@echo "  make test-shared             - Run shared component tests"
+	@echo "  make test-shared-events      - Run shared events tests"
 
 deps:
 	@echo "Installing Go protobuf tools..."
@@ -16,7 +31,7 @@ deps:
 	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest
 	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@latest
 
-proto-all: $(addprefix proto-,$(SERVICES))
+proto: $(addprefix proto-,$(SERVICES))
 
 proto-account:
 	@echo "Generating account service protobuf..."
@@ -62,3 +77,28 @@ proto-gateway:
 		--openapiv2_out=services/gateway/api \
 		--openapiv2_opt=allow_merge=true,merge_file_name=gateway \
 		services/gateway/api/*.proto
+
+test-account-kafka:
+	@echo "Running account service /kafka tests..."
+	cd services/account/internal/kafka/consumer_handlers && go test -v ./...
+	cd services/account/internal/kafka/producer_handlers && go test -v ./...
+
+test-account: test-account-kafka
+
+test-transaction-kafka:
+	@echo "Running transaction service /kafka tests..."
+	cd services/transaction/internal/kafka/consumer_handlers && go test -v ./...
+	cd services/transaction/internal/kafka/producer_handlers && go test -v ./...
+
+test-transaction: test-transaction-kafka
+
+test-gateway:
+	@echo "Nothing to run for 'make test-gateway'..."
+
+test-shared-events:
+	@echo "Running shared /events tests..."
+	cd shared/events && go test -v ./...
+
+test-shared: test-shared-events
+
+test: $(addprefix test-,$(SERVICES)) test-shared

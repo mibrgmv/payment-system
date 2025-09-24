@@ -26,6 +26,8 @@ func (m *MockProducer) Close() error {
 }
 
 func TestTransactionResultHandler_HandleEvent_Success(t *testing.T) {
+	t.Parallel()
+
 	mockProducer := new(MockProducer)
 	handler := producer_handlers.NewTransactionResultHandler()
 
@@ -55,6 +57,8 @@ func TestTransactionResultHandler_HandleEvent_Success(t *testing.T) {
 }
 
 func TestTransactionResultHandler_GetEventType(t *testing.T) {
+	t.Parallel()
+
 	handler := producer_handlers.NewTransactionResultHandler()
 
 	eventType := handler.GetEventType()

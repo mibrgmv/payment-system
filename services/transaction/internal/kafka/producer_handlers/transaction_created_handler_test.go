@@ -26,6 +26,8 @@ func (m *MockProducer) Close() error {
 }
 
 func TestTransactionCreatedHandler_HandleEvent_Success(t *testing.T) {
+	t.Parallel()
+
 	mockProducer := new(MockProducer)
 	handler := producer_handlers.NewTransactionCreatedHandler()
 
@@ -67,6 +69,8 @@ func TestTransactionCreatedHandler_HandleEvent_Success(t *testing.T) {
 }
 
 func TestTransactionCreatedHandler_HandleEvent_InvalidJSON(t *testing.T) {
+	t.Parallel()
+
 	mockProducer := new(MockProducer)
 	handler := producer_handlers.NewTransactionCreatedHandler()
 
@@ -85,6 +89,8 @@ func TestTransactionCreatedHandler_HandleEvent_InvalidJSON(t *testing.T) {
 }
 
 func TestTransactionCreatedHandler_HandleEvent_ProducerError(t *testing.T) {
+	t.Parallel()
+
 	mockProducer := new(MockProducer)
 	handler := producer_handlers.NewTransactionCreatedHandler()
 
@@ -123,6 +129,8 @@ func TestTransactionCreatedHandler_HandleEvent_ProducerError(t *testing.T) {
 }
 
 func TestTransactionCreatedHandler_GetEventType(t *testing.T) {
+	t.Parallel()
+
 	handler := producer_handlers.NewTransactionCreatedHandler()
 
 	eventType := handler.GetEventType()

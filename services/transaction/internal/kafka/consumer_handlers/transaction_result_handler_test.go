@@ -26,8 +26,8 @@ import (
 func setupTestContainer(t *testing.T) (*pgxpool.Pool, func()) {
 	ctx := context.Background()
 
-	pgContainer, err := postgrestest.RunContainer(ctx,
-		testcontainers.WithImage("postgres:15-alpine"),
+	pgContainer, err := postgrestest.Run(ctx,
+		"postgres:15-alpine",
 		postgrestest.WithDatabase("testdb"),
 		postgrestest.WithUsername("testuser"),
 		postgrestest.WithPassword("testpass"),
@@ -81,6 +81,8 @@ func setupTestTransaction(t *testing.T, pool *pgxpool.Pool, transactionID string
 }
 
 func TestTransactionResultHandler_HandleEvent_Completed_Success(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestContainer(t)
 	defer cleanup()
 
@@ -129,6 +131,8 @@ func TestTransactionResultHandler_HandleEvent_Completed_Success(t *testing.T) {
 }
 
 func TestTransactionResultHandler_HandleEvent_Failed_Success(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestContainer(t)
 	defer cleanup()
 
@@ -173,6 +177,8 @@ func TestTransactionResultHandler_HandleEvent_Failed_Success(t *testing.T) {
 }
 
 func TestTransactionResultHandler_HandleEvent_TransactionNotFound(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestContainer(t)
 	defer cleanup()
 
@@ -207,6 +213,8 @@ func TestTransactionResultHandler_HandleEvent_TransactionNotFound(t *testing.T) 
 }
 
 func TestTransactionResultHandler_HandleEvent_InvalidStatus(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestContainer(t)
 	defer cleanup()
 
@@ -248,6 +256,8 @@ func TestTransactionResultHandler_HandleEvent_InvalidStatus(t *testing.T) {
 }
 
 func TestTransactionResultHandler_HandleEvent_AlreadyCompleted(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestContainer(t)
 	defer cleanup()
 
@@ -288,6 +298,8 @@ func TestTransactionResultHandler_HandleEvent_AlreadyCompleted(t *testing.T) {
 }
 
 func TestTransactionResultHandler_HandleEvent_InvalidJSON(t *testing.T) {
+	t.Parallel()
+
 	pool, cleanup := setupTestContainer(t)
 	defer cleanup()
 
@@ -311,6 +323,8 @@ func TestTransactionResultHandler_HandleEvent_InvalidJSON(t *testing.T) {
 }
 
 func TestTransactionResultHandler_GetEventID_Success(t *testing.T) {
+	t.Parallel()
+
 	transactionRepo := postgres.NewTransactionRepository(nil)
 	outboxRepo := outbox.NewPostgresRepository(nil)
 	transactionService := service.NewTransactionService(transactionRepo, outboxRepo)
@@ -325,6 +339,8 @@ func TestTransactionResultHandler_GetEventID_Success(t *testing.T) {
 }
 
 func TestTransactionResultHandler_GetEventID_InvalidJSON(t *testing.T) {
+	t.Parallel()
+
 	transactionRepo := postgres.NewTransactionRepository(nil)
 	outboxRepo := outbox.NewPostgresRepository(nil)
 	transactionService := service.NewTransactionService(transactionRepo, outboxRepo)
