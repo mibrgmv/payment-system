@@ -30,8 +30,8 @@ func (s *accountServer) CreateAccount(ctx context.Context, req *accountv1.Create
 
 	account, err := s.service.CreateAccount(ctx, req.UserId, currency)
 	if err != nil {
-		if errors.Is(err, service.ErrUserIDRequired) {
-			return nil, status.Error(codes.InvalidArgument, "user_id is required")
+		if errors.Is(err, service.ErrFieldIsRequired) || errors.Is(err, service.ErrInvalidField) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create account: %v", err))
 	}
@@ -42,8 +42,8 @@ func (s *accountServer) CreateAccount(ctx context.Context, req *accountv1.Create
 func (s *accountServer) GetAccount(ctx context.Context, req *accountv1.GetAccountRequest) (*accountv1.Account, error) {
 	account, err := s.service.GetAccount(ctx, req.AccountId)
 	if err != nil {
-		if errors.Is(err, service.ErrAccountIDRequired) {
-			return nil, status.Error(codes.InvalidArgument, "account_id is required")
+		if errors.Is(err, service.ErrFieldIsRequired) || errors.Is(err, service.ErrInvalidField) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		if errors.Is(err, service.ErrAccountNotFound) {
 			return nil, status.Error(codes.NotFound, "account not found")
@@ -57,8 +57,8 @@ func (s *accountServer) GetAccount(ctx context.Context, req *accountv1.GetAccoun
 func (s *accountServer) ListAccounts(ctx context.Context, req *accountv1.ListAccountsRequest) (*accountv1.ListAccountsResponse, error) {
 	accounts, nextPageToken, err := s.service.ListAccounts(ctx, req.UserId, req.PageSize, req.PageToken)
 	if err != nil {
-		if errors.Is(err, service.ErrInvalidPageSize) {
-			return nil, status.Error(codes.InvalidArgument, "page size cannot be negative")
+		if errors.Is(err, service.ErrInvalidField) || errors.Is(err, service.ErrFieldIsRequired) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to list accounts: %v", err))
 	}
@@ -87,8 +87,8 @@ func (s *accountServer) UpdateAccount(ctx context.Context, req *accountv1.Update
 
 	updatedAccount, err := s.service.UpdateAccount(ctx, account)
 	if err != nil {
-		if errors.Is(err, service.ErrAccountIDRequired) {
-			return nil, status.Error(codes.InvalidArgument, "account_id is required")
+		if errors.Is(err, service.ErrFieldIsRequired) || errors.Is(err, service.ErrInvalidField) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		if errors.Is(err, service.ErrAccountNotFound) {
 			return nil, status.Error(codes.NotFound, "account not found")
@@ -101,8 +101,8 @@ func (s *accountServer) UpdateAccount(ctx context.Context, req *accountv1.Update
 
 func (s *accountServer) DeleteAccount(ctx context.Context, req *accountv1.DeleteAccountRequest) (*emptypb.Empty, error) {
 	if err := s.service.DeleteAccount(ctx, req.AccountId); err != nil {
-		if errors.Is(err, service.ErrAccountIDRequired) {
-			return nil, status.Error(codes.InvalidArgument, "account_id is required")
+		if errors.Is(err, service.ErrFieldIsRequired) || errors.Is(err, service.ErrInvalidField) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		if errors.Is(err, service.ErrAccountNotFound) {
 			return nil, status.Error(codes.NotFound, "account not found")
@@ -115,8 +115,8 @@ func (s *accountServer) DeleteAccount(ctx context.Context, req *accountv1.Delete
 func (s *accountServer) GetBalance(ctx context.Context, req *accountv1.GetBalanceRequest) (*accountv1.Balance, error) {
 	balance, err := s.service.GetBalance(ctx, req.AccountId)
 	if err != nil {
-		if errors.Is(err, service.ErrAccountIDRequired) {
-			return nil, status.Error(codes.InvalidArgument, "account_id is required")
+		if errors.Is(err, service.ErrFieldIsRequired) || errors.Is(err, service.ErrInvalidField) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		if errors.Is(err, service.ErrBalanceNotFound) {
 			return nil, status.Error(codes.NotFound, "balance not found")

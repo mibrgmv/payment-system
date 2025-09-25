@@ -5,16 +5,16 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/mibrgmv/payment-service/services/account/internal/repository"
 	"github.com/mibrgmv/payment-service/services/account/internal/service/models"
 )
 
 var (
-	ErrAccountNotFound   = repository.ErrAccountNotFound
-	ErrBalanceNotFound   = repository.ErrBalanceNotFound
-	ErrUserIDRequired    = errors.New("user ID is required")
-	ErrAccountIDRequired = errors.New("account ID is required")
-	ErrInvalidPageSize   = errors.New("page size cannot be negative")
+	ErrAccountNotFound = repository.ErrAccountNotFound
+	ErrBalanceNotFound = repository.ErrBalanceNotFound
+	ErrInvalidField    = errors.New("invalid field")
+	ErrFieldIsRequired = errors.New("field is required")
 )
 
 type AccountService interface {
@@ -39,21 +39,21 @@ func NewAccountService(accountRepo repository.AccountRepository, balanceRepo rep
 }
 
 func (s *accountService) CreateAccount(ctx context.Context, userID string, currency models.Currency) (*models.Account, error) {
-	if userID == "" {
-		return nil, ErrUserIDRequired
+	if err := validateUUID("user_id", userID); err != nil {
+		return nil, err
 	}
 
 	accountID, err := s.accountRepo.CreateAccount(ctx, userID, currency)
 	if err != nil {
-		return nil, fmt.Errorf("invalid currency: %w", err)
+		return nil, fmt.Errorf("failed to create account: %w", err)
 	}
 
 	return s.GetAccount(ctx, accountID)
 }
 
 func (s *accountService) GetAccount(ctx context.Context, accountID string) (*models.Account, error) {
-	if accountID == "" {
-		return nil, ErrAccountIDRequired
+	if err := validateUUID("account_id", accountID); err != nil {
+		return nil, err
 	}
 
 	account, err := s.accountRepo.GetAccount(ctx, accountID)
@@ -66,7 +66,7 @@ func (s *accountService) GetAccount(ctx context.Context, accountID string) (*mod
 
 func (s *accountService) ListAccounts(ctx context.Context, userID string, pageSize int32, pageToken string) ([]*models.Account, string, error) {
 	if pageSize < 0 {
-		return nil, "", ErrInvalidPageSize
+		return nil, "", fmt.Errorf("%w: page_size cannot be negative", ErrInvalidField)
 	}
 
 	accounts, nextPageToken, err := s.accountRepo.ListAccounts(ctx, userID, pageSize, pageToken)
@@ -78,8 +78,8 @@ func (s *accountService) ListAccounts(ctx context.Context, userID string, pageSi
 }
 
 func (s *accountService) UpdateAccount(ctx context.Context, account *models.Account) (*models.Account, error) {
-	if account.AccountID == "" {
-		return nil, ErrAccountIDRequired
+	if err := validateUUID("account_id", account.AccountID); err != nil {
+		return nil, err
 	}
 
 	if err := s.accountRepo.UpdateAccount(ctx, account); err != nil {
@@ -90,8 +90,8 @@ func (s *accountService) UpdateAccount(ctx context.Context, account *models.Acco
 }
 
 func (s *accountService) DeleteAccount(ctx context.Context, accountID string) error {
-	if accountID == "" {
-		return ErrAccountIDRequired
+	if err := validateUUID("account_id", accountID); err != nil {
+		return err
 	}
 
 	if err := s.accountRepo.DeleteAccount(ctx, accountID); err != nil {
@@ -102,8 +102,8 @@ func (s *accountService) DeleteAccount(ctx context.Context, accountID string) er
 }
 
 func (s *accountService) GetBalance(ctx context.Context, accountID string) (*models.Balance, error) {
-	if accountID == "" {
-		return nil, ErrAccountIDRequired
+	if err := validateUUID("account_id", accountID); err != nil {
+		return nil, err
 	}
 
 	balance, err := s.balanceRepo.GetBalance(ctx, accountID)
@@ -115,4 +115,14 @@ func (s *accountService) GetBalance(ctx context.Context, accountID string) (*mod
 	}
 
 	return balance, nil
+}
+
+func validateUUID(name, value string) error {
+	if value == "" {
+		return fmt.Errorf("%w: %s", ErrFieldIsRequired, name)
+	}
+	if _, err := uuid.Parse(value); err != nil {
+		return fmt.Errorf("%w: %s must be a valid UUID", ErrInvalidField, name)
+	}
+	return nil
 }
