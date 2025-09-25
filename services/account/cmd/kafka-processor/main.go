@@ -28,15 +28,17 @@ func main() {
 	}
 	defer pool.Close()
 
-	kafkaProcessor := server.SetupKafkaProcessor(pool, cfg.Kafka)
-	if err := kafkaProcessor.Start(ctx); err != nil {
-		log.Fatal("Failed to start Kafka processor:", err)
-	}
-
-	log.Println("Kafka event processor started successfully")
+	processor := server.SetupKafkaProcessor(pool, cfg.Kafka)
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		log.Printf("starting kafka event processor...")
+		if err := processor.Start(ctx); err != nil {
+			log.Printf("Kafka processor error: %v", err)
+		}
+	}()
 
 	sig := <-sigCh
 	log.Printf("Kafka processor shutting down. Received signal: %v", sig)

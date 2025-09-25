@@ -28,13 +28,15 @@ func main() {
 	}
 	defer pool.Close()
 
-	kafkaPublisher := server.SetupKafkaPublisher(pool, cfg.Kafka)
-	kafkaPublisher.Start(ctx)
-
-	log.Println("Kafka event processor started successfully")
+	publisher := server.SetupKafkaPublisher(pool, cfg.Kafka)
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		log.Println("starting kafka outbox publisher...")
+		publisher.Start(ctx)
+	}()
 
 	sig := <-sigCh
 	log.Printf("Kafka processor shutting down. Received signal: %v", sig)
