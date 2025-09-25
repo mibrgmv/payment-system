@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"fmt"
+	"net/url"
 	"time"
 )
 
@@ -23,4 +24,24 @@ func (c Config) ConnectionString() string {
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		c.Host, c.Port, c.Username, c.Password, c.Database, c.SSLMode,
 	)
+}
+
+func (c Config) ConnectionStringURL() string {
+	sslMode := c.SSLMode
+	if sslMode == "" {
+		sslMode = "disable"
+	}
+
+	u := &url.URL{
+		Scheme: "postgres",
+		User:   url.UserPassword(c.Username, c.Password),
+		Host:   fmt.Sprintf("%s:%d", c.Host, c.Port),
+		Path:   "/" + c.Database,
+	}
+
+	query := url.Values{}
+	query.Set("sslmode", sslMode)
+	u.RawQuery = query.Encode()
+
+	return u.String()
 }
