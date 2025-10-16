@@ -1,0 +1,11 @@
+server:
+  host: ""
+  port: 8080
+
+services:
+  account:
+    host: "localhost"
+    port: 50051
+  transaction:
+    host: "localhost"
+    port: 50052
