@@ -1,11 +1,92 @@
 services:
+  payment-gateway:
+    container_name: payment-gateway
+    build:
+      context: services/gateway
+      dockerfile: Dockerfile
+      target: gateway
+    ports:
+      - "8080:8080"
+    environment:
+      ACCOUNT_SERVICE_HOST: account-service
+      ACCOUNT_SERVICE_PORT: 50051
+      TRANSACTION_SERVICE_HOST: transaction-service
+      TRANSACTION_SERVICE_PORT: 50052
+    depends_on:
+      - account-service
+      - transaction-service
+    restart: unless-stopped
+    networks:
+      - payment-system-network
+
+  account-kafka-publisher:
+    container_name: account-kafka-publisher
+    build:
+      context: services/account
+      dockerfile: Dockerfile
+      target: account-kafka-publisher
+    environment:
+      ACCOUNT_SERVICE_POSTGRES_PORT: 5432
+      ACCOUNT_SERVICE_POSTGRES_HOST: account-postgres
+      ACCOUNT_SERVICE_POSTGRES_USERNAME: bill_clinton
+      ACCOUNT_SERVICE_POSTGRES_PASSWORD: 2001
+      KAFKA_BROKERS: kafka:29092
+    depends_on:
+      - kafka
+      - account-service
+    restart: unless-stopped
+    networks:
+      - payment-system-network
+
+  account-kafka-processor:
+    container_name: account-kafka-processor
+    build:
+      context: services/account
+      dockerfile: Dockerfile
+      target: account-kafka-processor
+    environment:
+      ACCOUNT_SERVICE_POSTGRES_PORT: 5432
+      ACCOUNT_SERVICE_POSTGRES_HOST: account-postgres
+      ACCOUNT_SERVICE_POSTGRES_USERNAME: bill_clinton
+      ACCOUNT_SERVICE_POSTGRES_PASSWORD: 2001
+      KAFKA_BROKERS: kafka:29092
+    depends_on:
+      - kafka
+      - account-service
+    restart: unless-stopped
+    networks:
+      - payment-system-network
+
+  account-service:
+    container_name: account-service
+    build:
+      context: services/account
+      dockerfile: Dockerfile
+      target: account-service
+    ports:
+      - "50051:50051"
+    environment:
+      ACCOUNT_SERVICE_HOST: account-service
+      ACCOUNT_SERVICE_PORT: 50051
+      ACCOUNT_SERVICE_POSTGRES_PORT: 5432
+      ACCOUNT_SERVICE_POSTGRES_HOST: account-postgres
+      ACCOUNT_SERVICE_POSTGRES_USERNAME: bill_clinton
+      ACCOUNT_SERVICE_POSTGRES_PASSWORD: 2001
+      KAFKA_BROKERS: kafka:29092
+    depends_on:
+      - account-postgres
+      - kafka
+    restart: unless-stopped
+    networks:
+      - payment-system-network
+
   account-postgres:
     container_name: account-postgres
-    image: postgres:latest
+    image: postgres:18-alpine
     environment:
-      - POSTGRES_USER=bill_clinton
-      - POSTGRES_PASSWORD=2001
-      - POSTGRES_DB=account_service
+      POSTGRES_USER: bill_clinton
+      POSTGRES_PASSWORD: 2001
+      POSTGRES_DB: account_service
     ports:
       - "5432:5432"
     restart: unless-stopped
@@ -14,13 +95,74 @@ services:
     networks:
       - payment-system-network
 
+  transaction-kafka-publisher:
+    container_name: transaction-kafka-publisher
+    build:
+      context: services/transaction
+      dockerfile: Dockerfile
+      target: transaction-kafka-publisher
+    environment:
+      TRANSACTION_SERVICE_POSTGRES_PORT: 5432
+      TRANSACTION_SERVICE_POSTGRES_HOST: transaction-postgres
+      TRANSACTION_SERVICE_POSTGRES_USERNAME: solid_snake
+      TRANSACTION_SERVICE_POSTGRES_PASSWORD: gv%R*uJBHI)J
+      KAFKA_BROKERS: kafka:29092
+    depends_on:
+      - kafka
+      - transaction-service
+    restart: unless-stopped
+    networks:
+      - payment-system-network
+
+  transaction-kafka-processor:
+    container_name: transaction-kafka-processor
+    build:
+      context: services/transaction
+      dockerfile: Dockerfile
+      target: transaction-kafka-processor
+    environment:
+      TRANSACTION_SERVICE_POSTGRES_PORT: 5432
+      TRANSACTION_SERVICE_POSTGRES_HOST: transaction-postgres
+      TRANSACTION_SERVICE_POSTGRES_USERNAME: solid_snake
+      TRANSACTION_SERVICE_POSTGRES_PASSWORD: gv%R*uJBHI)J
+      KAFKA_BROKERS: kafka:29092
+    depends_on:
+      - kafka
+      - transaction-service
+    restart: unless-stopped
+    networks:
+      - payment-system-network
+
+  transaction-service:
+    container_name: transaction-service
+    build:
+      context: services/transaction
+      dockerfile: Dockerfile
+      target: transaction-service
+    ports:
+      - "50052:50052"
+    environment:
+      TRANSACTION_SERVICE_HOST: transaction-service
+      TRANSACTION_SERVICE_PORT: 50052
+      TRANSACTION_SERVICE_POSTGRES_PORT: 5432
+      TRANSACTION_SERVICE_POSTGRES_HOST: transaction-postgres
+      TRANSACTION_SERVICE_POSTGRES_USERNAME: solid_snake
+      TRANSACTION_SERVICE_POSTGRES_PASSWORD: gv%R*uJBHI)J
+      KAFKA_BROKERS: kafka:29092
+    depends_on:
+      - transaction-postgres
+      - kafka
+    restart: unless-stopped
+    networks:
+      - payment-system-network
+
   transaction-postgres:
     container_name: transaction-postgres
-    image: postgres:latest
+    image: postgres:18-alpine
     environment:
-      - POSTGRES_USER=solid_snake
-      - POSTGRES_PASSWORD=gv%R*uJBHI)J
-      - POSTGRES_DB=transaction_service
+      POSTGRES_USER: solid_snake
+      POSTGRES_PASSWORD: gv%R*uJBHI)J
+      POSTGRES_DB: transaction_service
     ports:
       - "5433:5432"
     restart: unless-stopped

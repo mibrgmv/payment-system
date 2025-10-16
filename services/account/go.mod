@@ -1,4 +1,4 @@
-module github.com/mibrgmv/payment-service/services/account
+module github.com/mibrgmv/payment-system/services/account
 
 go 1.24.0
 
@@ -6,7 +6,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/joho/godotenv v1.5.1
-	github.com/mibrgmv/payment-service/shared v0.0.0-00010101000000-000000000000
+	github.com/mibrgmv/payment-system/shared v0.0.1
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.39.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.39.0
@@ -80,5 +80,3 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/mibrgmv/payment-service/shared => ../../shared
