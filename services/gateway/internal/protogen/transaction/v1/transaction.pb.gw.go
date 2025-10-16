@@ -241,7 +241,7 @@ func RegisterTransactionServiceHandlerServer(ctx context.Context, mux *runtime.S
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/transaction.v1.TransactionService/CreateTransfer", runtime.WithHTTPPathPattern("/v1/transfers"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/transaction.v1.TransactionService/CreateTransfer", runtime.WithHTTPPathPattern("/api/v1/transfers"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -261,7 +261,7 @@ func RegisterTransactionServiceHandlerServer(ctx context.Context, mux *runtime.S
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/transaction.v1.TransactionService/CreateDeposit", runtime.WithHTTPPathPattern("/v1/deposits"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/transaction.v1.TransactionService/CreateDeposit", runtime.WithHTTPPathPattern("/api/v1/deposits"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -281,7 +281,7 @@ func RegisterTransactionServiceHandlerServer(ctx context.Context, mux *runtime.S
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/transaction.v1.TransactionService/CreateWithdrawal", runtime.WithHTTPPathPattern("/v1/withdrawals"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/transaction.v1.TransactionService/CreateWithdrawal", runtime.WithHTTPPathPattern("/api/v1/withdrawals"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -301,7 +301,7 @@ func RegisterTransactionServiceHandlerServer(ctx context.Context, mux *runtime.S
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/transaction.v1.TransactionService/GetTransaction", runtime.WithHTTPPathPattern("/v1/transactions/{transaction_id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/transaction.v1.TransactionService/GetTransaction", runtime.WithHTTPPathPattern("/api/v1/transactions/{transaction_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -321,7 +321,7 @@ func RegisterTransactionServiceHandlerServer(ctx context.Context, mux *runtime.S
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/transaction.v1.TransactionService/ListTransactions", runtime.WithHTTPPathPattern("/v1/transactions"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/transaction.v1.TransactionService/ListTransactions", runtime.WithHTTPPathPattern("/api/v1/transactions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -341,7 +341,7 @@ func RegisterTransactionServiceHandlerServer(ctx context.Context, mux *runtime.S
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/transaction.v1.TransactionService/GetTransactionStatus", runtime.WithHTTPPathPattern("/v1/transactions/{transaction_id}/status"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/transaction.v1.TransactionService/GetTransactionStatus", runtime.WithHTTPPathPattern("/api/v1/transactions/{transaction_id}/status"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -399,7 +399,7 @@ func RegisterTransactionServiceHandlerClient(ctx context.Context, mux *runtime.S
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/transaction.v1.TransactionService/CreateTransfer", runtime.WithHTTPPathPattern("/v1/transfers"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/transaction.v1.TransactionService/CreateTransfer", runtime.WithHTTPPathPattern("/api/v1/transfers"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -416,7 +416,7 @@ func RegisterTransactionServiceHandlerClient(ctx context.Context, mux *runtime.S
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/transaction.v1.TransactionService/CreateDeposit", runtime.WithHTTPPathPattern("/v1/deposits"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/transaction.v1.TransactionService/CreateDeposit", runtime.WithHTTPPathPattern("/api/v1/deposits"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -433,7 +433,7 @@ func RegisterTransactionServiceHandlerClient(ctx context.Context, mux *runtime.S
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/transaction.v1.TransactionService/CreateWithdrawal", runtime.WithHTTPPathPattern("/v1/withdrawals"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/transaction.v1.TransactionService/CreateWithdrawal", runtime.WithHTTPPathPattern("/api/v1/withdrawals"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -450,7 +450,7 @@ func RegisterTransactionServiceHandlerClient(ctx context.Context, mux *runtime.S
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/transaction.v1.TransactionService/GetTransaction", runtime.WithHTTPPathPattern("/v1/transactions/{transaction_id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/transaction.v1.TransactionService/GetTransaction", runtime.WithHTTPPathPattern("/api/v1/transactions/{transaction_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -467,7 +467,7 @@ func RegisterTransactionServiceHandlerClient(ctx context.Context, mux *runtime.S
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/transaction.v1.TransactionService/ListTransactions", runtime.WithHTTPPathPattern("/v1/transactions"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/transaction.v1.TransactionService/ListTransactions", runtime.WithHTTPPathPattern("/api/v1/transactions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -484,7 +484,7 @@ func RegisterTransactionServiceHandlerClient(ctx context.Context, mux *runtime.S
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/transaction.v1.TransactionService/GetTransactionStatus", runtime.WithHTTPPathPattern("/v1/transactions/{transaction_id}/status"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/transaction.v1.TransactionService/GetTransactionStatus", runtime.WithHTTPPathPattern("/api/v1/transactions/{transaction_id}/status"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -501,12 +501,12 @@ func RegisterTransactionServiceHandlerClient(ctx context.Context, mux *runtime.S
 }
 
 var (
-	pattern_TransactionService_CreateTransfer_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "transfers"}, ""))
-	pattern_TransactionService_CreateDeposit_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "deposits"}, ""))
-	pattern_TransactionService_CreateWithdrawal_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "withdrawals"}, ""))
-	pattern_TransactionService_GetTransaction_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "transactions", "transaction_id"}, ""))
-	pattern_TransactionService_ListTransactions_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "transactions"}, ""))
-	pattern_TransactionService_GetTransactionStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "transactions", "transaction_id", "status"}, ""))
+	pattern_TransactionService_CreateTransfer_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "transfers"}, ""))
+	pattern_TransactionService_CreateDeposit_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "deposits"}, ""))
+	pattern_TransactionService_CreateWithdrawal_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "withdrawals"}, ""))
+	pattern_TransactionService_GetTransaction_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "transactions", "transaction_id"}, ""))
+	pattern_TransactionService_ListTransactions_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "transactions"}, ""))
+	pattern_TransactionService_GetTransactionStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"api", "v1", "transactions", "transaction_id", "status"}, ""))
 )
 
 var (

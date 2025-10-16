@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package transaction.v1;
 
-option go_package = "github.com/mibrgmv/payment-service/services/transaction/internal/protogen/transaction;transactionv1";
+option go_package = "github.com/mibrgmv/payment-system/services/gateway/internal/protogen/transaction/v1;transactionv1";
 
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
@@ -10,40 +10,40 @@ import "google/api/annotations.proto";
 service TransactionService {
   rpc CreateTransfer(CreateTransferRequest) returns (Transaction) {
     option (google.api.http) = {
-      post: "/v1/transfers"
+      post: "/api/v1/transfers"
       body: "*"
     };
   }
 
   rpc CreateDeposit(CreateDepositRequest) returns (Transaction) {
     option (google.api.http) = {
-      post: "/v1/deposits"
+      post: "/api/v1/deposits"
       body: "*"
     };
   }
 
   rpc CreateWithdrawal(CreateWithdrawalRequest) returns (Transaction) {
     option (google.api.http) = {
-      post: "/v1/withdrawals"
+      post: "/api/v1/withdrawals"
       body: "*"
     };
   }
 
   rpc GetTransaction(GetTransactionRequest) returns (Transaction) {
     option (google.api.http) = {
-      get: "/v1/transactions/{transaction_id}"
+      get: "/api/v1/transactions/{transaction_id}"
     };
   }
 
   rpc ListTransactions(ListTransactionsRequest) returns (ListTransactionsResponse) {
     option (google.api.http) = {
-      get: "/v1/transactions"
+      get: "/api/v1/transactions"
     };
   }
 
   rpc GetTransactionStatus(GetTransactionStatusRequest) returns (TransactionStatusResponse) {
     option (google.api.http) = {
-      get: "/v1/transactions/{transaction_id}/status"
+      get: "/api/v1/transactions/{transaction_id}/status"
     };
   }
 }

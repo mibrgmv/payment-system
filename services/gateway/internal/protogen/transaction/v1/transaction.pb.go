@@ -887,14 +887,14 @@ const file_transaction_proto_rawDesc = "" +
 	"\x14CURRENCY_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fCURRENCY_RUB\x10\x01\x12\x10\n" +
 	"\fCURRENCY_USD\x10\x02\x12\x10\n" +
-	"\fCURRENCY_EUR\x10\x032\x8c\x06\n" +
-	"\x12TransactionService\x12n\n" +
-	"\x0eCreateTransfer\x12%.transaction.v1.CreateTransferRequest\x1a\x1b.transaction.v1.Transaction\"\x18\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/v1/transfers\x12k\n" +
-	"\rCreateDeposit\x12$.transaction.v1.CreateDepositRequest\x1a\x1b.transaction.v1.Transaction\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/v1/deposits\x12t\n" +
-	"\x10CreateWithdrawal\x12'.transaction.v1.CreateWithdrawalRequest\x1a\x1b.transaction.v1.Transaction\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/v1/withdrawals\x12\x7f\n" +
-	"\x0eGetTransaction\x12%.transaction.v1.GetTransactionRequest\x1a\x1b.transaction.v1.Transaction\")\x82\xd3\xe4\x93\x02#\x12!/v1/transactions/{transaction_id}\x12\x7f\n" +
-	"\x10ListTransactions\x12'.transaction.v1.ListTransactionsRequest\x1a(.transaction.v1.ListTransactionsResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/transactions\x12\xa0\x01\n" +
-	"\x14GetTransactionStatus\x12+.transaction.v1.GetTransactionStatusRequest\x1a).transaction.v1.TransactionStatusResponse\"0\x82\xd3\xe4\x93\x02*\x12(/v1/transactions/{transaction_id}/statusBeZcgithub.com/mibrgmv/payment-service/services/transaction/internal/protogen/transaction;transactionv1b\x06proto3"
+	"\fCURRENCY_EUR\x10\x032\xa6\x06\n" +
+	"\x12TransactionService\x12r\n" +
+	"\x0eCreateTransfer\x12%.transaction.v1.CreateTransferRequest\x1a\x1b.transaction.v1.Transaction\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/v1/transfers\x12o\n" +
+	"\rCreateDeposit\x12$.transaction.v1.CreateDepositRequest\x1a\x1b.transaction.v1.Transaction\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/v1/deposits\x12x\n" +
+	"\x10CreateWithdrawal\x12'.transaction.v1.CreateWithdrawalRequest\x1a\x1b.transaction.v1.Transaction\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/withdrawals\x12\x83\x01\n" +
+	"\x0eGetTransaction\x12%.transaction.v1.GetTransactionRequest\x1a\x1b.transaction.v1.Transaction\"-\x82\xd3\xe4\x93\x02'\x12%/api/v1/transactions/{transaction_id}\x12\x83\x01\n" +
+	"\x10ListTransactions\x12'.transaction.v1.ListTransactionsRequest\x1a(.transaction.v1.ListTransactionsResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/api/v1/transactions\x12\xa4\x01\n" +
+	"\x14GetTransactionStatus\x12+.transaction.v1.GetTransactionStatusRequest\x1a).transaction.v1.TransactionStatusResponse\"4\x82\xd3\xe4\x93\x02.\x12,/api/v1/transactions/{transaction_id}/statusBcZagithub.com/mibrgmv/payment-system/services/gateway/internal/protogen/transaction/v1;transactionv1b\x06proto3"
 
 var (
 	file_transaction_proto_rawDescOnce sync.Once

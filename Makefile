@@ -78,6 +78,8 @@ proto-gateway:
 		--openapiv2_opt=allow_merge=true,merge_file_name=gateway \
 		services/gateway/api/*.proto
 
+proto-all: proto-account proto-account proto-transaction
+
 test-account-kafka:
 	@echo "Running account service /kafka tests..."
 	cd services/account/internal/kafka/consumer_handlers && go test -v ./...
