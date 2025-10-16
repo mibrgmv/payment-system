@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/mibrgmv/payment-system/services/account/internal/config"
-	"github.com/mibrgmv/payment-system/services/account/internal/server"
+	"github.com/mibrgmv/payment-system/account/internal/config"
+	"github.com/mibrgmv/payment-system/account/internal/server"
 	"github.com/mibrgmv/payment-system/shared/postgres"
 )
 

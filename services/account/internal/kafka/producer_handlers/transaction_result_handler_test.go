@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mibrgmv/payment-system/services/account/internal/kafka/events"
-	"github.com/mibrgmv/payment-system/services/account/internal/kafka/producer_handlers"
+	"github.com/mibrgmv/payment-system/account/internal/kafka/events"
+	"github.com/mibrgmv/payment-system/account/internal/kafka/producer_handlers"
 	"github.com/mibrgmv/payment-system/shared/outbox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

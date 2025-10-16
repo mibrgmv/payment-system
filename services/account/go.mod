@@ -1,4 +1,4 @@
-module github.com/mibrgmv/payment-system/services/account
+module github.com/mibrgmv/payment-system/account
 
 go 1.24.0
 

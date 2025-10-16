@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	accountv1 "github.com/mibrgmv/payment-system/services/account/internal/protogen/account/v1"
-	"github.com/mibrgmv/payment-system/services/account/internal/service"
-	"github.com/mibrgmv/payment-system/services/account/internal/service/models"
+	accountv1 "github.com/mibrgmv/payment-system/account/internal/protogen/account/v1"
+	"github.com/mibrgmv/payment-system/account/internal/service"
+	"github.com/mibrgmv/payment-system/account/internal/service/models"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mibrgmv/payment-system/services/account/internal/kafka/events"
+	"github.com/mibrgmv/payment-system/account/internal/kafka/events"
 	"github.com/mibrgmv/payment-system/shared/json"
 	"github.com/mibrgmv/payment-system/shared/kafka"
 	"github.com/mibrgmv/payment-system/shared/outbox"

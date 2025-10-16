@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/mibrgmv/payment-system/services/account/internal/kafka/events"
-	"github.com/mibrgmv/payment-system/services/account/internal/service"
+	"github.com/mibrgmv/payment-system/account/internal/kafka/events"
+	"github.com/mibrgmv/payment-system/account/internal/service"
 	sharedevents "github.com/mibrgmv/payment-system/shared/events"
 	sharedjson "github.com/mibrgmv/payment-system/shared/json"
 )

@@ -7,9 +7,9 @@ gen:
 	@echo "Generating account service protobuf..."
 	protoc -I=api/v1 -I=../../shared/third_party \
 		--go_out=. \
-		--go_opt=module=github.com/mibrgmv/payment-system/services/account \
+		--go_opt=module=github.com/mibrgmv/payment-system/account \
 		--go-grpc_out=. \
-		--go-grpc_opt=module=github.com/mibrgmv/payment-system/services/account \
+		--go-grpc_opt=module=github.com/mibrgmv/payment-system/account \
 		api/v1/*.proto
 
 test-kafka:

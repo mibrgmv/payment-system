@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/mibrgmv/payment-system/services/account/internal/repository"
-	"github.com/mibrgmv/payment-system/services/account/internal/service/models"
+	"github.com/mibrgmv/payment-system/account/internal/repository"
+	"github.com/mibrgmv/payment-system/account/internal/service/models"
 )
 
 var (
