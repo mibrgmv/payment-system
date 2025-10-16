@@ -7,9 +7,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/mibrgmv/payment-service/services/account/internal/repository"
-	"github.com/mibrgmv/payment-service/services/account/internal/service/models"
-	"github.com/mibrgmv/payment-service/shared/postgres"
+	"github.com/mibrgmv/payment-system/services/account/internal/repository"
+	"github.com/mibrgmv/payment-system/services/account/internal/service/models"
+	"github.com/mibrgmv/payment-system/shared/postgres"
 )
 
 type balanceRepo struct {

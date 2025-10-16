@@ -2,7 +2,7 @@ package models
 
 import (
 	"fmt"
-	transactionv1 "github.com/mibrgmv/payment-service/services/transaction/internal/protogen/transaction"
+	transactionv1 "github.com/mibrgmv/payment-system/services/transaction/internal/protogen/transaction"
 )
 
 type TransactionType string

@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/mibrgmv/payment-service/services/account/internal/kafka/events"
-	"github.com/mibrgmv/payment-service/services/account/internal/service"
-	sharedevents "github.com/mibrgmv/payment-service/shared/events"
-	sharedjson "github.com/mibrgmv/payment-service/shared/json"
+	"github.com/mibrgmv/payment-system/services/account/internal/kafka/events"
+	"github.com/mibrgmv/payment-system/services/account/internal/service"
+	sharedevents "github.com/mibrgmv/payment-system/shared/events"
+	sharedjson "github.com/mibrgmv/payment-system/shared/json"
 )
 
 type TransactionCreatedHandler struct {

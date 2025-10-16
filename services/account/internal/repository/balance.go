@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/mibrgmv/payment-service/services/account/internal/service/models"
+	"github.com/mibrgmv/payment-system/services/account/internal/service/models"
 )
 
 var (

@@ -5,24 +5,26 @@ import (
 	"errors"
 	"fmt"
 
-	accountv1 "github.com/mibrgmv/payment-service/services/account/internal/protogen/account"
-	"github.com/mibrgmv/payment-service/services/account/internal/service"
-	"github.com/mibrgmv/payment-service/services/account/internal/service/models"
+	accountv1 "github.com/mibrgmv/payment-system/services/account/internal/protogen/account"
+	"github.com/mibrgmv/payment-system/services/account/internal/service"
+	"github.com/mibrgmv/payment-system/services/account/internal/service/models"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type accountServer struct {
+type accountServiceServer struct {
 	accountv1.UnimplementedAccountServiceServer
 	service service.AccountService
 }
 
 func NewAccountServiceServer(service service.AccountService) accountv1.AccountServiceServer {
-	return &accountServer{service: service}
+	return &accountServiceServer{
+		service: service,
+	}
 }
 
-func (s *accountServer) CreateAccount(ctx context.Context, req *accountv1.CreateAccountRequest) (*accountv1.Account, error) {
+func (s *accountServiceServer) CreateAccount(ctx context.Context, req *accountv1.CreateAccountRequest) (*accountv1.Account, error) {
 	currency, err := models.CurrencyFromProto(req.Currency)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid currency: %v", err))
@@ -39,7 +41,7 @@ func (s *accountServer) CreateAccount(ctx context.Context, req *accountv1.Create
 	return account.ToProto(), nil
 }
 
-func (s *accountServer) GetAccount(ctx context.Context, req *accountv1.GetAccountRequest) (*accountv1.Account, error) {
+func (s *accountServiceServer) GetAccount(ctx context.Context, req *accountv1.GetAccountRequest) (*accountv1.Account, error) {
 	account, err := s.service.GetAccount(ctx, req.AccountId)
 	if err != nil {
 		if errors.Is(err, service.ErrFieldIsRequired) || errors.Is(err, service.ErrInvalidField) {
@@ -54,7 +56,7 @@ func (s *accountServer) GetAccount(ctx context.Context, req *accountv1.GetAccoun
 	return account.ToProto(), nil
 }
 
-func (s *accountServer) ListAccounts(ctx context.Context, req *accountv1.ListAccountsRequest) (*accountv1.ListAccountsResponse, error) {
+func (s *accountServiceServer) ListAccounts(ctx context.Context, req *accountv1.ListAccountsRequest) (*accountv1.ListAccountsResponse, error) {
 	accounts, nextPageToken, err := s.service.ListAccounts(ctx, req.UserId, req.PageSize, req.PageToken)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidField) || errors.Is(err, service.ErrFieldIsRequired) {
@@ -74,7 +76,7 @@ func (s *accountServer) ListAccounts(ctx context.Context, req *accountv1.ListAcc
 	}, nil
 }
 
-func (s *accountServer) UpdateAccount(ctx context.Context, req *accountv1.UpdateAccountRequest) (*accountv1.Account, error) {
+func (s *accountServiceServer) UpdateAccount(ctx context.Context, req *accountv1.UpdateAccountRequest) (*accountv1.Account, error) {
 	currency, err := models.CurrencyFromProto(req.Account.Currency)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid currency: %v", err))
@@ -99,7 +101,7 @@ func (s *accountServer) UpdateAccount(ctx context.Context, req *accountv1.Update
 	return updatedAccount.ToProto(), nil
 }
 
-func (s *accountServer) DeleteAccount(ctx context.Context, req *accountv1.DeleteAccountRequest) (*emptypb.Empty, error) {
+func (s *accountServiceServer) DeleteAccount(ctx context.Context, req *accountv1.DeleteAccountRequest) (*emptypb.Empty, error) {
 	if err := s.service.DeleteAccount(ctx, req.AccountId); err != nil {
 		if errors.Is(err, service.ErrFieldIsRequired) || errors.Is(err, service.ErrInvalidField) {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -112,7 +114,7 @@ func (s *accountServer) DeleteAccount(ctx context.Context, req *accountv1.Delete
 	return &emptypb.Empty{}, nil
 }
 
-func (s *accountServer) GetBalance(ctx context.Context, req *accountv1.GetBalanceRequest) (*accountv1.Balance, error) {
+func (s *accountServiceServer) GetBalance(ctx context.Context, req *accountv1.GetBalanceRequest) (*accountv1.Balance, error) {
 	balance, err := s.service.GetBalance(ctx, req.AccountId)
 	if err != nil {
 		if errors.Is(err, service.ErrFieldIsRequired) || errors.Is(err, service.ErrInvalidField) {

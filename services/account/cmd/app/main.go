@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/mibrgmv/payment-service/services/account/internal/config"
-	"github.com/mibrgmv/payment-service/services/account/internal/server"
-	"github.com/mibrgmv/payment-service/shared/postgres"
+	"github.com/mibrgmv/payment-system/services/account/internal/config"
+	"github.com/mibrgmv/payment-system/services/account/internal/server"
+	"github.com/mibrgmv/payment-system/shared/postgres"
 )
 
 func main() {

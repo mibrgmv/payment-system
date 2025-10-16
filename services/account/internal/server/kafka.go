@@ -4,15 +4,15 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/mibrgmv/payment-service/services/account/internal/kafka/consumer_handlers"
-	"github.com/mibrgmv/payment-service/services/account/internal/kafka/producer_handlers"
-	"github.com/mibrgmv/payment-service/services/account/internal/repository/postgres"
-	"github.com/mibrgmv/payment-service/services/account/internal/service"
-	"github.com/mibrgmv/payment-service/shared/events"
-	"github.com/mibrgmv/payment-service/shared/inbox"
-	sharedkafka "github.com/mibrgmv/payment-service/shared/kafka"
-	"github.com/mibrgmv/payment-service/shared/outbox"
-	sharedpostgres "github.com/mibrgmv/payment-service/shared/postgres"
+	"github.com/mibrgmv/payment-system/services/account/internal/kafka/consumer_handlers"
+	"github.com/mibrgmv/payment-system/services/account/internal/kafka/producer_handlers"
+	"github.com/mibrgmv/payment-system/services/account/internal/repository/postgres"
+	"github.com/mibrgmv/payment-system/services/account/internal/service"
+	"github.com/mibrgmv/payment-system/shared/events"
+	"github.com/mibrgmv/payment-system/shared/inbox"
+	sharedkafka "github.com/mibrgmv/payment-system/shared/kafka"
+	"github.com/mibrgmv/payment-system/shared/outbox"
+	sharedpostgres "github.com/mibrgmv/payment-system/shared/postgres"
 )
 
 func SetupKafkaProcessor(pool *pgxpool.Pool, kafkaCfg sharedkafka.Config) *events.Processor {

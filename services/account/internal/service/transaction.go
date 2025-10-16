@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/mibrgmv/payment-service/services/account/internal/kafka/events"
-	"github.com/mibrgmv/payment-service/services/account/internal/repository"
-	"github.com/mibrgmv/payment-service/shared/outbox"
+	"github.com/mibrgmv/payment-system/services/account/internal/kafka/events"
+	"github.com/mibrgmv/payment-system/services/account/internal/repository"
+	"github.com/mibrgmv/payment-system/shared/outbox"
 )
 
 var (

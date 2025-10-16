@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	transactionv1 "github.com/mibrgmv/payment-service/services/transaction/internal/protogen/transaction"
+	transactionv1 "github.com/mibrgmv/payment-system/services/transaction/internal/protogen/transaction"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
