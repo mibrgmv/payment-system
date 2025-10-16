@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mibrgmv/payment-system/services/transaction/internal/kafka/events"
 	"github.com/mibrgmv/payment-system/shared/json"
 	"github.com/mibrgmv/payment-system/shared/kafka"
 	"github.com/mibrgmv/payment-system/shared/outbox"
+	"github.com/mibrgmv/payment-system/transaction/internal/kafka/events"
 )
 
 type TransactionCreatedHandler struct{}

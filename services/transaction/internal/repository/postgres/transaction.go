@@ -9,10 +9,10 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/mibrgmv/payment-system/services/transaction/internal/repository"
-	"github.com/mibrgmv/payment-system/services/transaction/internal/service/models"
 	"github.com/mibrgmv/payment-system/shared/pagination"
 	"github.com/mibrgmv/payment-system/shared/postgres"
+	"github.com/mibrgmv/payment-system/transaction/internal/repository"
+	"github.com/mibrgmv/payment-system/transaction/internal/service/models"
 )
 
 type transactionRepo struct {

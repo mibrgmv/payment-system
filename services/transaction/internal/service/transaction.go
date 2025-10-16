@@ -9,10 +9,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/mibrgmv/payment-system/services/transaction/internal/kafka/events"
-	"github.com/mibrgmv/payment-system/services/transaction/internal/repository"
-	"github.com/mibrgmv/payment-system/services/transaction/internal/service/models"
 	"github.com/mibrgmv/payment-system/shared/outbox"
+	"github.com/mibrgmv/payment-system/transaction/internal/kafka/events"
+	"github.com/mibrgmv/payment-system/transaction/internal/repository"
+	"github.com/mibrgmv/payment-system/transaction/internal/service/models"
 )
 
 var (

@@ -1,4 +1,4 @@
-module github.com/mibrgmv/payment-system/services/transaction
+module github.com/mibrgmv/payment-system/transaction
 
 go 1.24.0
 

@@ -6,9 +6,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	transactionv1 "github.com/mibrgmv/payment-system/services/transaction/internal/protogen/transaction/v1"
-	"github.com/mibrgmv/payment-system/services/transaction/internal/service"
-	"github.com/mibrgmv/payment-system/services/transaction/internal/service/models"
+	transactionv1 "github.com/mibrgmv/payment-system/transaction/internal/protogen/transaction/v1"
+	"github.com/mibrgmv/payment-system/transaction/internal/service"
+	"github.com/mibrgmv/payment-system/transaction/internal/service/models"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"

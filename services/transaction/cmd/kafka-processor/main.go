@@ -7,9 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/mibrgmv/payment-system/services/transaction/internal/config"
-	"github.com/mibrgmv/payment-system/services/transaction/internal/server"
 	"github.com/mibrgmv/payment-system/shared/postgres"
+	"github.com/mibrgmv/payment-system/transaction/internal/config"
+	"github.com/mibrgmv/payment-system/transaction/internal/server"
 )
 
 func main() {

@@ -2,11 +2,11 @@ package server
 
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
-	transactiongrpc "github.com/mibrgmv/payment-system/services/transaction/internal/grpc"
-	transactionv1 "github.com/mibrgmv/payment-system/services/transaction/internal/protogen/transaction/v1"
-	"github.com/mibrgmv/payment-system/services/transaction/internal/repository/postgres"
-	"github.com/mibrgmv/payment-system/services/transaction/internal/service"
 	"github.com/mibrgmv/payment-system/shared/outbox"
+	transactiongrpc "github.com/mibrgmv/payment-system/transaction/internal/grpc"
+	transactionv1 "github.com/mibrgmv/payment-system/transaction/internal/protogen/transaction/v1"
+	"github.com/mibrgmv/payment-system/transaction/internal/repository/postgres"
+	"github.com/mibrgmv/payment-system/transaction/internal/service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )

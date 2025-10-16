@@ -4,15 +4,15 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/mibrgmv/payment-system/services/transaction/internal/kafka/consumer_handlers"
-	"github.com/mibrgmv/payment-system/services/transaction/internal/kafka/producer_handlers"
-	"github.com/mibrgmv/payment-system/services/transaction/internal/repository/postgres"
-	"github.com/mibrgmv/payment-system/services/transaction/internal/service"
 	"github.com/mibrgmv/payment-system/shared/events"
 	"github.com/mibrgmv/payment-system/shared/inbox"
 	sharedkafka "github.com/mibrgmv/payment-system/shared/kafka"
 	"github.com/mibrgmv/payment-system/shared/outbox"
 	sharedpostgres "github.com/mibrgmv/payment-system/shared/postgres"
+	"github.com/mibrgmv/payment-system/transaction/internal/kafka/consumer_handlers"
+	"github.com/mibrgmv/payment-system/transaction/internal/kafka/producer_handlers"
+	"github.com/mibrgmv/payment-system/transaction/internal/repository/postgres"
+	"github.com/mibrgmv/payment-system/transaction/internal/service"
 )
 
 func SetupKafkaProcessor(pool *pgxpool.Pool, kafkaCfg sharedkafka.Config) *events.Processor {
