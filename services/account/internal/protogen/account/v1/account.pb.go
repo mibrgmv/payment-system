@@ -618,16 +618,16 @@ const file_account_proto_rawDesc = "" +
 	"\x14CURRENCY_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fCURRENCY_RUB\x10\x01\x12\x10\n" +
 	"\fCURRENCY_USD\x10\x02\x12\x10\n" +
-	"\fCURRENCY_EUR\x10\x032\x96\x05\n" +
-	"\x0eAccountService\x12c\n" +
+	"\fCURRENCY_EUR\x10\x032\xae\x05\n" +
+	"\x0eAccountService\x12g\n" +
 	"\n" +
-	"GetAccount\x12\x1d.account.v1.GetAccountRequest\x1a\x13.account.v1.Account\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/accounts/{account_id}\x12g\n" +
-	"\fListAccounts\x12\x1f.account.v1.ListAccountsRequest\x1a .account.v1.ListAccountsResponse\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/accounts\x12_\n" +
-	"\rCreateAccount\x12 .account.v1.CreateAccountRequest\x1a\x13.account.v1.Account\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/v1/accounts\x12z\n" +
-	"\rUpdateAccount\x12 .account.v1.UpdateAccountRequest\x1a\x13.account.v1.Account\"2\x82\xd3\xe4\x93\x02,:\aaccount2!/v1/accounts/{account.account_id}\x12l\n" +
-	"\rDeleteAccount\x12 .account.v1.DeleteAccountRequest\x1a\x16.google.protobuf.Empty\"!\x82\xd3\xe4\x93\x02\x1b*\x19/v1/accounts/{account_id}\x12k\n" +
+	"GetAccount\x12\x1d.account.v1.GetAccountRequest\x1a\x13.account.v1.Account\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1/accounts/{account_id}\x12k\n" +
+	"\fListAccounts\x12\x1f.account.v1.ListAccountsRequest\x1a .account.v1.ListAccountsResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/api/v1/accounts\x12c\n" +
+	"\rCreateAccount\x12 .account.v1.CreateAccountRequest\x1a\x13.account.v1.Account\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/v1/accounts\x12~\n" +
+	"\rUpdateAccount\x12 .account.v1.UpdateAccountRequest\x1a\x13.account.v1.Account\"6\x82\xd3\xe4\x93\x020:\aaccount2%/api/v1/accounts/{account.account_id}\x12p\n" +
+	"\rDeleteAccount\x12 .account.v1.DeleteAccountRequest\x1a\x16.google.protobuf.Empty\"%\x82\xd3\xe4\x93\x02\x1f*\x1d/api/v1/accounts/{account_id}\x12o\n" +
 	"\n" +
-	"GetBalance\x12\x1d.account.v1.GetBalanceRequest\x1a\x13.account.v1.Balance\")\x82\xd3\xe4\x93\x02#\x12!/v1/accounts/{account_id}/balanceB[ZYgithub.com/mibrgmv/payment-system/services/account/internal/protogen/account/v1;accountv1b\x06proto3"
+	"GetBalance\x12\x1d.account.v1.GetBalanceRequest\x1a\x13.account.v1.Balance\"-\x82\xd3\xe4\x93\x02'\x12%/api/v1/accounts/{account_id}/balanceB[ZYgithub.com/mibrgmv/payment-system/services/account/internal/protogen/account/v1;accountv1b\x06proto3"
 
 var (
 	file_account_proto_rawDescOnce sync.Once

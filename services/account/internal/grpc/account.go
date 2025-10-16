@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	accountv1 "github.com/mibrgmv/payment-system/services/account/internal/protogen/account"
+	accountv1 "github.com/mibrgmv/payment-system/services/account/internal/protogen/account/v1"
 	"github.com/mibrgmv/payment-system/services/account/internal/service"
 	"github.com/mibrgmv/payment-system/services/account/internal/service/models"
 	"google.golang.org/grpc/codes"

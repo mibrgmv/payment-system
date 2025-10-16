@@ -2,7 +2,7 @@ package models
 
 import (
 	"fmt"
-	accountv1 "github.com/mibrgmv/payment-system/services/account/internal/protogen/account"
+	accountv1 "github.com/mibrgmv/payment-system/services/account/internal/protogen/account/v1"
 )
 
 type Currency string

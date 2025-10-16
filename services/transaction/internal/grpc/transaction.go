@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/mibrgmv/payment-system/services/transaction/internal/protogen/transaction"
+	transactionv1 "github.com/mibrgmv/payment-system/services/transaction/internal/protogen/transaction/v1"
 	"github.com/mibrgmv/payment-system/services/transaction/internal/service"
 	"github.com/mibrgmv/payment-system/services/transaction/internal/service/models"
 	"google.golang.org/grpc/codes"

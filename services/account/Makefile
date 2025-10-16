@@ -5,13 +5,12 @@ lint:
 
 gen:
 	@echo "Generating account service protobuf..."
-	@mkdir -p services/account/internal/protogen/account
-	protoc -I=services/account/api -I=shared/third_party \
-		--go_out=services/account/internal/protogen/account \
-		--go_opt=paths=source_relative \
-		--go-grpc_out=services/account/internal/protogen/account \
-		--go-grpc_opt=paths=source_relative \
-		services/account/api/*.proto
+	protoc -I=api/v1 -I=../../shared/third_party \
+		--go_out=. \
+		--go_opt=module=github.com/mibrgmv/payment-system/services/account \
+		--go-grpc_out=. \
+		--go-grpc_opt=module=github.com/mibrgmv/payment-system/services/account \
+		api/v1/*.proto
 
 test-kafka:
 	@echo "Running account service /kafka tests..."

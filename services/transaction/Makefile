@@ -5,13 +5,12 @@ lint:
 
 gen:
 	@echo "Generating transaction service protobuf..."
-	@mkdir -p services/transaction/internal/protogen/transaction
-	protoc -I=services/transaction/api -I=shared/third_party \
-		--go_out=services/transaction/internal/protogen/transaction \
-		--go_opt=paths=source_relative \
-		--go-grpc_out=services/transaction/internal/protogen/transaction \
-		--go-grpc_opt=paths=source_relative \
-		services/transaction/api/*.proto
+	protoc -I=api/v1 -I=../../shared/third_party \
+		--go_out=. \
+		--go_opt=module=github.com/mibrgmv/payment-system/services/transaction \
+		--go-grpc_out=. \
+		--go-grpc_opt=module=github.com/mibrgmv/payment-system/services/transaction \
+		api/v1/*.proto
 
 test-kafka:
 	@echo "Running transaction service /kafka tests..."
