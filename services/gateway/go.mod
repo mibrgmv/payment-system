@@ -1,4 +1,4 @@
-module github.com/mibrgmv/payment-system/services/gateway
+module github.com/mibrgmv/payment-system/gateway
 
 go 1.24.0
 

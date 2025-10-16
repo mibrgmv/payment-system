@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/mibrgmv/payment-system/services/gateway/internal/config"
-	accountv1 "github.com/mibrgmv/payment-system/services/gateway/internal/protogen/account/v1"
-	transactionv1 "github.com/mibrgmv/payment-system/services/gateway/internal/protogen/transaction/v1"
+	"github.com/mibrgmv/payment-system/gateway/internal/config"
+	accountv1 "github.com/mibrgmv/payment-system/gateway/internal/protogen/account/v1"
+	transactionv1 "github.com/mibrgmv/payment-system/gateway/internal/protogen/transaction/v1"
 	"github.com/swaggo/http-swagger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

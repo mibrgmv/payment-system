@@ -894,7 +894,7 @@ const file_transaction_proto_rawDesc = "" +
 	"\x10CreateWithdrawal\x12'.transaction.v1.CreateWithdrawalRequest\x1a\x1b.transaction.v1.Transaction\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/withdrawals\x12\x83\x01\n" +
 	"\x0eGetTransaction\x12%.transaction.v1.GetTransactionRequest\x1a\x1b.transaction.v1.Transaction\"-\x82\xd3\xe4\x93\x02'\x12%/api/v1/transactions/{transaction_id}\x12\x83\x01\n" +
 	"\x10ListTransactions\x12'.transaction.v1.ListTransactionsRequest\x1a(.transaction.v1.ListTransactionsResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/api/v1/transactions\x12\xa4\x01\n" +
-	"\x14GetTransactionStatus\x12+.transaction.v1.GetTransactionStatusRequest\x1a).transaction.v1.TransactionStatusResponse\"4\x82\xd3\xe4\x93\x02.\x12,/api/v1/transactions/{transaction_id}/statusBcZagithub.com/mibrgmv/payment-system/services/gateway/internal/protogen/transaction/v1;transactionv1b\x06proto3"
+	"\x14GetTransactionStatus\x12+.transaction.v1.GetTransactionStatusRequest\x1a).transaction.v1.TransactionStatusResponse\"4\x82\xd3\xe4\x93\x02.\x12,/api/v1/transactions/{transaction_id}/statusBZZXgithub.com/mibrgmv/payment-system/gateway/internal/protogen/transaction/v1;transactionv1b\x06proto3"
 
 var (
 	file_transaction_proto_rawDescOnce sync.Once

@@ -1,6 +1,6 @@
 .PHONY: lint gen
 
-GO_MODULE=github.com/mibrgmv/payment-system/services/gateway
+GO_MODULE=github.com/mibrgmv/payment-system/gateway
 PROTO_DIR=api/v1
 
 lint:

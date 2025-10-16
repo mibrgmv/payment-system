@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mibrgmv/payment-system/services/gateway/internal/config"
-	"github.com/mibrgmv/payment-system/services/gateway/internal/server"
+	"github.com/mibrgmv/payment-system/gateway/internal/config"
+	"github.com/mibrgmv/payment-system/gateway/internal/server"
 )
 
 func main() {

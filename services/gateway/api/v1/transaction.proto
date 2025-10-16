@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package transaction.v1;
 
-option go_package = "github.com/mibrgmv/payment-system/services/gateway/internal/protogen/transaction/v1;transactionv1";
+option go_package = "github.com/mibrgmv/payment-system/gateway/internal/protogen/transaction/v1;transactionv1";
 
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
