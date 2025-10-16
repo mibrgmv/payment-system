@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/mibrgmv/payment-service/shared/kafka"
-	"github.com/mibrgmv/payment-service/shared/outbox"
+	"github.com/mibrgmv/payment-system/shared/kafka"
+	"github.com/mibrgmv/payment-system/shared/outbox"
 )
 
 type PublisherEventHandler interface {

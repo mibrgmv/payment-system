@@ -1,4 +1,4 @@
-module github.com/mibrgmv/payment-service/shared
+module github.com/mibrgmv/payment-system/shared
 
 go 1.24.0
 

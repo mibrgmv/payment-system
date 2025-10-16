@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -52,4 +53,21 @@ func GetString(key string, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+func GetStringSlice(key string, defaultVal []string) []string {
+	val := GetString(key, "")
+	if val == "" {
+		return defaultVal
+	}
+
+	parts := strings.Split(val, ",")
+	result := make([]string, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
 }

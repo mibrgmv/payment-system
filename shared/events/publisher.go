@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/mibrgmv/payment-service/shared/kafka"
-	"github.com/mibrgmv/payment-service/shared/outbox"
-	"github.com/mibrgmv/payment-service/shared/postgres"
-	"github.com/mibrgmv/payment-service/shared/retry"
+	"github.com/mibrgmv/payment-system/shared/kafka"
+	"github.com/mibrgmv/payment-system/shared/outbox"
+	"github.com/mibrgmv/payment-system/shared/postgres"
+	"github.com/mibrgmv/payment-system/shared/retry"
 )
 
 type PublisherConfig struct {
