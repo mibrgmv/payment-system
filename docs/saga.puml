@@ -1,0 +1,67 @@
+@startuml Saga Choreography - Payment System
+
+title Saga (хореография) — перевод денег
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+actor "Клиент" as Client
+participant "Gateway" as GW
+participant "Transaction\nService" as TS
+database "Transaction\nPostgres" as TDB
+queue "Kafka\ntransactions.created" as K1
+participant "Account\nService" as AS
+database "Account\nPostgres" as ADB
+queue "Kafka\ntransactions.results" as K2
+
+== 1. Создание транзакции ==
+
+Client -> GW : POST /api/v1/transfers
+GW -> TS : gRPC: CreateTransaction
+TS -> TDB : BEGIN
+TDB -> TDB : INSERT transaction\n(status: pending)
+TDB -> TDB : INSERT outbox\n(event: transaction_created)
+TS -> TDB : COMMIT
+TS -> GW : transaction_id
+GW -> Client : 201 Created
+
+== 2. Публикация события ==
+
+TS -> TDB : Publisher: SELECT FROM outbox\nFOR UPDATE SKIP LOCKED
+TS -> K1 : Produce: transaction_created
+TS -> TDB : UPDATE outbox SET status = 'published'
+
+== 3. Обработка в Account Service ==
+
+K1 -> AS : Consume: transaction_created
+AS -> ADB : BEGIN
+ADB -> ADB : INSERT inbox\n(ON CONFLICT DO NOTHING)
+
+alt Успех: достаточно средств
+    ADB -> ADB : UPDATE balance отправителя\n(списание)
+    ADB -> ADB : UPDATE balance получателя\n(начисление)
+    ADB -> ADB : INSERT outbox\n(event: transaction_result,\nstatus: completed)
+else Ошибка: недостаточно средств
+    ADB -> ADB : INSERT outbox\n(event: transaction_result,\nstatus: failed,\nreason: insufficient funds)
+end
+
+AS -> ADB : COMMIT
+AS -> K1 : Commit offset
+
+== 4. Публикация результата ==
+
+AS -> ADB : Publisher: SELECT FROM outbox\nFOR UPDATE SKIP LOCKED
+AS -> K2 : Produce: transaction_result
+AS -> ADB : UPDATE outbox SET status = 'published'
+
+== 5. Обновление статуса транзакции ==
+
+K2 -> TS : Consume: transaction_result
+TS -> TDB : BEGIN
+TDB -> TDB : INSERT inbox\n(ON CONFLICT DO NOTHING)
+TDB -> TDB : UPDATE transaction\nSET status = completed/failed
+TS -> TDB : COMMIT
+TS -> K2 : Commit offset
+
+@enduml
