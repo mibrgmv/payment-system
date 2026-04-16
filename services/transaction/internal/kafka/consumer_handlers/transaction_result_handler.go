@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	sharedevents "github.com/mibrgmv/payment-system/shared/events"
+	platformevents "github.com/mibrgmv/go-platform/events"
 	sharedjson "github.com/mibrgmv/payment-system/shared/json"
 	"github.com/mibrgmv/payment-system/transaction/internal/kafka/events"
 	"github.com/mibrgmv/payment-system/transaction/internal/service"
@@ -16,7 +16,7 @@ type TransactionResultHandler struct {
 	transactionService service.TransactionService
 }
 
-func NewTransactionResultHandler(transactionService service.TransactionService) sharedevents.ProcessorEventHandler {
+func NewTransactionResultHandler(transactionService service.TransactionService) platformevents.ProcessorEventHandler {
 	return &TransactionResultHandler{
 		transactionService: transactionService,
 	}

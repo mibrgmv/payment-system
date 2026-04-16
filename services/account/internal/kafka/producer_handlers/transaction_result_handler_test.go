@@ -3,11 +3,9 @@ package producer_handlers_test
 import (
 	"context"
 	"testing"
-	"time"
 
-	"github.com/mibrgmv/payment-system/account/internal/kafka/events"
+	"github.com/mibrgmv/go-platform/outbox"
 	"github.com/mibrgmv/payment-system/account/internal/kafka/producer_handlers"
-	"github.com/mibrgmv/payment-system/shared/outbox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -16,7 +14,7 @@ type MockProducer struct {
 	mock.Mock
 }
 
-func (m *MockProducer) Produce(ctx context.Context, topic, key string, value interface{}) error {
+func (m *MockProducer) Produce(ctx context.Context, topic, key string, value []byte) error {
 	args := m.Called(ctx, topic, key, value)
 	return args.Error(0)
 }
@@ -32,23 +30,14 @@ func TestTransactionResultHandler_HandleEvent_Success(t *testing.T) {
 	handler := producer_handlers.NewTransactionResultHandler()
 
 	ctx := context.Background()
+	payload := []byte(`{"transaction_id":"txn_123","status":"completed"}`)
 	event := &outbox.Event{
-		EventID: "test_event_id",
-		Topic:   "transactions.results",
-		RawPayload: []byte(`{
-			"transaction_id": "txn_123",
-			"status": "completed",
-			"timestamp": "2023-12-07T10:00:00Z"
-		}`),
+		EventID:    "test_event_id",
+		Topic:      "transactions.results",
+		RawPayload: payload,
 	}
 
-	expectedPayload := events.TransactionResult{
-		TransactionID: "txn_123",
-		Status:        "completed",
-		Timestamp:     time.Date(2023, 12, 7, 10, 0, 0, 0, time.UTC),
-	}
-
-	mockProducer.On("Produce", ctx, "transactions.results", "test_event_id", expectedPayload).Return(nil)
+	mockProducer.On("Produce", ctx, "transactions.results", "test_event_id", payload).Return(nil)
 
 	err := handler.HandleEvent(ctx, event, mockProducer)
 	assert.NoError(t, err)

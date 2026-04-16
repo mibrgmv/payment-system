@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/mibrgmv/payment-system/shared/outbox"
+	"github.com/mibrgmv/go-platform/outbox"
 	transactiongrpc "github.com/mibrgmv/payment-system/transaction/internal/grpc"
 	transactionv1 "github.com/mibrgmv/payment-system/transaction/internal/protogen/transaction/v1"
 	"github.com/mibrgmv/payment-system/transaction/internal/repository/postgres"

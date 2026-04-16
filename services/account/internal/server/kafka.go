@@ -4,23 +4,23 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/mibrgmv/go-platform/events"
+	"github.com/mibrgmv/go-platform/inbox"
+	platformkafka "github.com/mibrgmv/go-platform/kafka"
+	"github.com/mibrgmv/go-platform/outbox"
+	platformpostgres "github.com/mibrgmv/go-platform/postgres"
 	"github.com/mibrgmv/payment-system/account/internal/kafka/consumer_handlers"
 	"github.com/mibrgmv/payment-system/account/internal/kafka/producer_handlers"
 	"github.com/mibrgmv/payment-system/account/internal/repository/postgres"
 	"github.com/mibrgmv/payment-system/account/internal/service"
-	"github.com/mibrgmv/payment-system/shared/events"
-	"github.com/mibrgmv/payment-system/shared/inbox"
-	sharedkafka "github.com/mibrgmv/payment-system/shared/kafka"
-	"github.com/mibrgmv/payment-system/shared/outbox"
-	sharedpostgres "github.com/mibrgmv/payment-system/shared/postgres"
 )
 
-func SetupKafkaProcessor(pool *pgxpool.Pool, kafkaCfg sharedkafka.Config) *events.Processor {
+func SetupKafkaProcessor(pool *pgxpool.Pool, kafkaCfg platformkafka.Config) *events.Processor {
 	balanceRepo := postgres.NewBalanceRepository(pool)
 	accountRepo := postgres.NewAccountRepository(pool)
-	inboxRepo := inbox.NewPostgresRepository(pool)
+	inboxRepo := inbox.NewPostgresRepository(pool, "account-service")
 	outboxRepo := outbox.NewPostgresRepository(pool)
-	db := sharedpostgres.NewDB(pool)
+	db := platformpostgres.NewDB(pool)
 	transactionService := service.NewTransactionService(balanceRepo, accountRepo, outboxRepo)
 
 	transactionCreatedHandler := consumer_handlers.NewTransactionCreatedHandler(transactionService)
@@ -34,7 +34,7 @@ func SetupKafkaProcessor(pool *pgxpool.Pool, kafkaCfg sharedkafka.Config) *event
 		TopicHandlers: map[string]string{
 			"transactions.created": "transaction_created",
 		},
-		ConsumerConfigs: map[string]sharedkafka.ConsumerConfig{
+		ConsumerConfigs: map[string]platformkafka.ConsumerConfig{
 			"transactions.created": {
 				Brokers:         kafkaCfg.Brokers,
 				GroupID:         "account-service-transactions",
@@ -50,10 +50,10 @@ func SetupKafkaProcessor(pool *pgxpool.Pool, kafkaCfg sharedkafka.Config) *event
 	return events.NewProcessor(registry, inboxRepo, db, config)
 }
 
-func SetupKafkaPublisher(pool *pgxpool.Pool, kafkaCfg sharedkafka.Config) *events.Publisher {
+func SetupKafkaPublisher(pool *pgxpool.Pool, kafkaCfg platformkafka.Config) *events.Publisher {
 	outboxRepo := outbox.NewPostgresRepository(pool)
-	db := sharedpostgres.NewDB(pool)
-	producer := sharedkafka.NewProducer(sharedkafka.ProducerConfig{
+	db := platformpostgres.NewDB(pool)
+	producer := platformkafka.NewProducer(platformkafka.ProducerConfig{
 		Brokers:  kafkaCfg.Brokers,
 		ClientID: "account-service-producer",
 	})

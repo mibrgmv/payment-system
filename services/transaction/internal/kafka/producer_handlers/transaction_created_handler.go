@@ -2,12 +2,9 @@ package producer_handlers
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/mibrgmv/payment-system/shared/json"
-	"github.com/mibrgmv/payment-system/shared/kafka"
-	"github.com/mibrgmv/payment-system/shared/outbox"
-	"github.com/mibrgmv/payment-system/transaction/internal/kafka/events"
+	"github.com/mibrgmv/go-platform/kafka"
+	"github.com/mibrgmv/go-platform/outbox"
 )
 
 type TransactionCreatedHandler struct{}
@@ -17,11 +14,7 @@ func NewTransactionCreatedHandler() *TransactionCreatedHandler {
 }
 
 func (h *TransactionCreatedHandler) HandleEvent(ctx context.Context, event *outbox.Event, producer kafka.Producer) error {
-	var payload events.TransactionCreated
-	if err := json.StrictUnmarshal(event.RawPayload, &payload); err != nil {
-		return fmt.Errorf("failed to unmarshal transaction created event: %w", err)
-	}
-	return producer.Produce(ctx, event.Topic, event.EventID, payload)
+	return producer.Produce(ctx, event.Topic, event.EventID, event.RawPayload)
 }
 
 func (h *TransactionCreatedHandler) GetEventType() string {

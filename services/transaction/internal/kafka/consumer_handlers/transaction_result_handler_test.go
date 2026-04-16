@@ -10,8 +10,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/mibrgmv/payment-system/shared/outbox"
-	sharedpostgres "github.com/mibrgmv/payment-system/shared/postgres"
+	"github.com/mibrgmv/go-platform/outbox"
+	platformpostgres "github.com/mibrgmv/go-platform/postgres"
 	"github.com/mibrgmv/payment-system/transaction/internal/kafka/consumer_handlers"
 	"github.com/mibrgmv/payment-system/transaction/internal/kafka/events"
 	"github.com/mibrgmv/payment-system/transaction/internal/repository/postgres"
@@ -27,7 +27,7 @@ func setupTestContainer(t *testing.T) (*pgxpool.Pool, func()) {
 	ctx := context.Background()
 
 	pgContainer, err := postgrestest.Run(ctx,
-		"postgres:15-alpine",
+		"postgres:16-alpine",
 		postgrestest.WithDatabase("testdb"),
 		postgrestest.WithUsername("testuser"),
 		postgrestest.WithPassword("testpass"),
@@ -47,13 +47,13 @@ func setupTestContainer(t *testing.T) (*pgxpool.Pool, func()) {
 	_, b, _, _ := runtime.Caller(0)
 	basepath := filepath.Dir(b)
 	migrationPath := filepath.Join(basepath, "..", "..", "migrations")
-	if err := sharedpostgres.MigrateUp(connStr, migrationPath); err != nil {
+	if err := platformpostgres.MigrateUp(connStr, migrationPath); err != nil {
 		t.Fatalf("Failed to run migrations: %v", err)
 	}
 	require.NoError(t, err)
 
 	cleanup := func() {
-		if err := sharedpostgres.MigrateDown(connStr, migrationPath); err != nil {
+		if err := platformpostgres.MigrateDown(connStr, migrationPath); err != nil {
 			t.Logf("Failed to migrate down: %v", err)
 		}
 

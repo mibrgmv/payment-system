@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 
 	"github.com/joho/godotenv"
+	"github.com/mibrgmv/go-platform/kafka"
+	"github.com/mibrgmv/go-platform/postgres"
 	"github.com/mibrgmv/payment-system/shared/env"
-	"github.com/mibrgmv/payment-system/shared/kafka"
 	"github.com/mibrgmv/payment-system/shared/loader"
-	"github.com/mibrgmv/payment-system/shared/postgres"
 	"github.com/mibrgmv/payment-system/shared/server"
 )
 
