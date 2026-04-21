@@ -7,7 +7,7 @@ lint:
 	golangci-lint run
 
 gen:
-	protoc -I=$(PROTO_DIR) -I=../../shared/third_party \
+	protoc -I=$(PROTO_DIR) -I=../../third_party \
 		--go_out=. \
 		--go_opt=module=$(GO_MODULE) \
 		--go-grpc_out=. \

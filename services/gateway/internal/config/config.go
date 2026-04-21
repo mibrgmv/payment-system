@@ -1,42 +1,65 @@
 package config
 
 import (
-	"log"
-	"path/filepath"
+	"fmt"
+	"os"
+	"strconv"
 
-	"github.com/joho/godotenv"
-	"github.com/mibrgmv/payment-system/shared/env"
-	"github.com/mibrgmv/payment-system/shared/loader"
-	"github.com/mibrgmv/payment-system/shared/server"
+	"gopkg.in/yaml.v3"
 )
 
-type Config struct {
-	Server   server.Config `yaml:"server"`
-	Services struct {
-		Account     server.Config `yaml:"account"`
-		Transaction server.Config `yaml:"transaction"`
-	}
+type ServerConfig struct {
+	Host string `yaml:"host"`
+	Port int    `yaml:"port"`
 }
 
-func Load(config *Config) error {
-	yamlPath := filepath.Join("internal", "config", "config.yaml")
-	if err := loader.Load(config, yamlPath); err != nil {
-		return err
+func (s ServerConfig) Addr() string {
+	return fmt.Sprintf("%s:%d", s.Host, s.Port)
+}
+
+type Config struct {
+	Server   ServerConfig `yaml:"server"`
+	Services struct {
+		Account     ServerConfig `yaml:"account"`
+		Transaction ServerConfig `yaml:"transaction"`
+	} `yaml:"services"`
+}
+
+func Load(path string) (*Config, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("reading config: %w", err)
 	}
 
-	envPath := filepath.Join("..", "..", ".env")
-	if err := godotenv.Load(envPath); err != nil {
-		log.Printf("no .env file found: %v", err)
+	var cfg Config
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("parsing config: %w", err)
 	}
 
-	config.Server.Host = env.GetString("GATEWAY_SERVICE_HOST", config.Server.Host)
-	config.Server.Port = env.GetInt("GATEWAY_SERVICE_PORT", config.Server.Port)
+	cfg.Server.Host = getEnv("GATEWAY_SERVICE_HOST", cfg.Server.Host)
+	cfg.Server.Port = getEnvInt("GATEWAY_SERVICE_PORT", cfg.Server.Port)
 
-	config.Services.Account.Host = env.GetString("ACCOUNT_SERVICE_HOST", config.Services.Account.Host)
-	config.Services.Account.Port = env.GetInt("ACCOUNT_SERVICE_PORT", config.Services.Account.Port)
+	cfg.Services.Account.Host = getEnv("ACCOUNT_SERVICE_HOST", cfg.Services.Account.Host)
+	cfg.Services.Account.Port = getEnvInt("ACCOUNT_SERVICE_PORT", cfg.Services.Account.Port)
 
-	config.Services.Transaction.Host = env.GetString("TRANSACTION_SERVICE_HOST", config.Services.Transaction.Host)
-	config.Services.Transaction.Port = env.GetInt("TRANSACTION_SERVICE_PORT", config.Services.Transaction.Port)
+	cfg.Services.Transaction.Host = getEnv("TRANSACTION_SERVICE_HOST", cfg.Services.Transaction.Host)
+	cfg.Services.Transaction.Port = getEnvInt("TRANSACTION_SERVICE_PORT", cfg.Services.Transaction.Port)
 
-	return nil
+	return &cfg, nil
+}
+
+func getEnv(key, fallback string) string {
+	if v, ok := os.LookupEnv(key); ok {
+		return v
+	}
+	return fallback
+}
+
+func getEnvInt(key string, fallback int) int {
+	if v, ok := os.LookupEnv(key); ok {
+		if i, err := strconv.Atoi(v); err == nil {
+			return i
+		}
+	}
+	return fallback
 }

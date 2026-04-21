@@ -16,8 +16,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var cfg config.Config
-	err := config.Load(&cfg)
+	cfg, err := config.Load("internal/config/config.yaml")
 	if err != nil {
 		log.Fatal("Failed to load config:", err)
 	}

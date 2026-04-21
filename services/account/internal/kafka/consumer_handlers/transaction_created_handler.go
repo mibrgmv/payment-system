@@ -9,7 +9,6 @@ import (
 	platformevents "github.com/mibrgmv/go-platform/events"
 	"github.com/mibrgmv/payment-system/account/internal/kafka/events"
 	"github.com/mibrgmv/payment-system/account/internal/service"
-	sharedjson "github.com/mibrgmv/payment-system/shared/json"
 )
 
 type TransactionCreatedHandler struct {
@@ -24,7 +23,7 @@ func NewTransactionCreatedHandler(transactionService service.TransactionService)
 
 func (h *TransactionCreatedHandler) HandleEvent(ctx context.Context, tx pgx.Tx, eventData []byte) error {
 	var event events.TransactionCreated
-	if err := sharedjson.StrictUnmarshal(eventData, &event); err != nil {
+	if err := strictUnmarshal(eventData, &event); err != nil {
 		return fmt.Errorf("failed to unmarshal transaction created: %w", err)
 	}
 	return h.transactionService.HandleTransactionCreated(ctx, tx, event)

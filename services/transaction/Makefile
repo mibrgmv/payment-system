@@ -5,7 +5,7 @@ lint:
 
 gen:
 	@echo "Generating transaction service protobuf..."
-	protoc -I=api/v1 -I=../../shared/third_party \
+	protoc -I=api/v1 -I=../../third_party \
 		--go_out=. \
 		--go_opt=module=github.com/mibrgmv/payment-system/transaction \
 		--go-grpc_out=. \

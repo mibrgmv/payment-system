@@ -17,13 +17,12 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var cfg config.Config
-	err := config.Load(&cfg)
+	cfg, err := config.Load("internal/config/config.yaml")
 	if err != nil {
 		log.Fatal("Failed to load config:", err)
 	}
 
-	s, err := server.NewHttpServer(ctx, cfg)
+	s, err := server.NewHttpServer(ctx, *cfg)
 	if err != nil {
 		log.Fatal("Failed to create HTTP server:", err)
 	}

@@ -1,44 +1,82 @@
 package config
 
 import (
-	"log"
-	"path/filepath"
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
 
-	"github.com/joho/godotenv"
 	"github.com/mibrgmv/go-platform/kafka"
 	"github.com/mibrgmv/go-platform/postgres"
-	"github.com/mibrgmv/payment-system/shared/env"
-	"github.com/mibrgmv/payment-system/shared/loader"
-	"github.com/mibrgmv/payment-system/shared/server"
+	"gopkg.in/yaml.v3"
 )
 
+type ServerConfig struct {
+	Host string `yaml:"host"`
+	Port int    `yaml:"port"`
+}
+
+func (s ServerConfig) Addr() string {
+	return fmt.Sprintf("%s:%d", s.Host, s.Port)
+}
+
 type Config struct {
-	Server   server.Config   `yaml:"server"`
+	Server   ServerConfig    `yaml:"server"`
 	Postgres postgres.Config `yaml:"postgres"`
 	Kafka    kafka.Config    `yaml:"kafka"`
 }
 
-func Load(config *Config) error {
-	yamlPath := filepath.Join("internal", "config", "config.yaml")
-	if err := loader.Load(config, yamlPath); err != nil {
-		return err
+func Load(path string) (*Config, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("reading config: %w", err)
 	}
 
-	envPath := filepath.Join("..", "..", ".env")
-	if err := godotenv.Load(envPath); err != nil {
-		log.Printf("no .env file found: %v", err)
+	var cfg Config
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("parsing config: %w", err)
 	}
 
-	config.Server.Host = env.GetString("TRANSACTION_SERVICE_HOST", config.Server.Host)
-	config.Server.Port = env.GetInt("TRANSACTION_SERVICE_PORT", config.Server.Port)
+	cfg.Server.Host = getEnv("TRANSACTION_SERVICE_HOST", cfg.Server.Host)
+	cfg.Server.Port = getEnvInt("TRANSACTION_SERVICE_PORT", cfg.Server.Port)
 
-	config.Postgres.Host = env.GetString("TRANSACTION_SERVICE_POSTGRES_HOST", config.Postgres.Host)
-	config.Postgres.Port = env.GetInt("TRANSACTION_SERVICE_POSTGRES_PORT", config.Postgres.Port)
-	config.Postgres.Username = env.GetString("TRANSACTION_SERVICE_POSTGRES_USERNAME", config.Postgres.Username)
-	config.Postgres.Password = env.GetString("TRANSACTION_SERVICE_POSTGRES_PASSWORD", config.Postgres.Password)
-	config.Postgres.Database = env.GetString("TRANSACTION_SERVICE_POSTGRES_DATABASE", config.Postgres.Database)
+	cfg.Postgres.Host = getEnv("TRANSACTION_SERVICE_POSTGRES_HOST", cfg.Postgres.Host)
+	cfg.Postgres.Port = getEnvInt("TRANSACTION_SERVICE_POSTGRES_PORT", cfg.Postgres.Port)
+	cfg.Postgres.Username = getEnv("TRANSACTION_SERVICE_POSTGRES_USERNAME", cfg.Postgres.Username)
+	cfg.Postgres.Password = getEnv("TRANSACTION_SERVICE_POSTGRES_PASSWORD", cfg.Postgres.Password)
+	cfg.Postgres.Database = getEnv("TRANSACTION_SERVICE_POSTGRES_DATABASE", cfg.Postgres.Database)
 
-	config.Kafka.Brokers = env.GetStringSlice("TRANSACTION_SERVICE_KAFKA_BROKERS", config.Kafka.Brokers)
+	cfg.Kafka.Brokers = getEnvStringSlice("KAFKA_BROKERS", cfg.Kafka.Brokers)
 
-	return nil
+	return &cfg, nil
+}
+
+func getEnv(key, fallback string) string {
+	if v, ok := os.LookupEnv(key); ok {
+		return v
+	}
+	return fallback
+}
+
+func getEnvInt(key string, fallback int) int {
+	if v, ok := os.LookupEnv(key); ok {
+		if i, err := strconv.Atoi(v); err == nil {
+			return i
+		}
+	}
+	return fallback
+}
+
+func getEnvStringSlice(key string, fallback []string) []string {
+	if v, ok := os.LookupEnv(key); ok && v != "" {
+		parts := strings.Split(v, ",")
+		result := make([]string, 0, len(parts))
+		for _, p := range parts {
+			if t := strings.TrimSpace(p); t != "" {
+				result = append(result, t)
+			}
+		}
+		return result
+	}
+	return fallback
 }

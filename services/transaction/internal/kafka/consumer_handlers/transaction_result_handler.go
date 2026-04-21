@@ -7,7 +7,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	platformevents "github.com/mibrgmv/go-platform/events"
-	sharedjson "github.com/mibrgmv/payment-system/shared/json"
 	"github.com/mibrgmv/payment-system/transaction/internal/kafka/events"
 	"github.com/mibrgmv/payment-system/transaction/internal/service"
 )
@@ -24,7 +23,7 @@ func NewTransactionResultHandler(transactionService service.TransactionService) 
 
 func (h *TransactionResultHandler) HandleEvent(ctx context.Context, tx pgx.Tx, eventData []byte) error {
 	var event events.TransactionResult
-	if err := sharedjson.StrictUnmarshal(eventData, &event); err != nil {
+	if err := strictUnmarshal(eventData, &event); err != nil {
 		return fmt.Errorf("failed to unmarshal transaction result: %w", err)
 	}
 	return h.transactionService.HandleTransactionResult(ctx, tx, event)

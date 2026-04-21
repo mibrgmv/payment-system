@@ -8,9 +8,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mibrgmv/go-platform/postgres"
+	"github.com/mibrgmv/payment-system/account/internal/pagination"
 	"github.com/mibrgmv/payment-system/account/internal/repository"
 	"github.com/mibrgmv/payment-system/account/internal/service/models"
-	"github.com/mibrgmv/payment-system/shared/pagination"
 )
 
 type accountRepo struct {

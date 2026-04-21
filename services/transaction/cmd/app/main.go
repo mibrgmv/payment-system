@@ -18,8 +18,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var cfg config.Config
-	err := config.Load(&cfg)
+	cfg, err := config.Load("internal/config/config.yaml")
 	if err != nil {
 		log.Fatal("Failed to load config:", err)
 	}
@@ -36,7 +35,7 @@ func main() {
 	}
 
 	s := server.NewGrpcServer(pool)
-	lis, err := net.Listen("tcp", cfg.Server.GetAddr())
+	lis, err := net.Listen("tcp", cfg.Server.Addr())
 	if err != nil {
 		log.Fatal("Failed to listen:", err)
 	}
@@ -45,7 +44,7 @@ func main() {
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		log.Printf("Transaction gRPC server starting on %s", cfg.Server.GetAddr())
+		log.Printf("Transaction gRPC server starting on %s", cfg.Server.Addr())
 		if err := s.Serve(lis); err != nil {
 			log.Fatal("Failed to serve gRPC:", err)
 		}

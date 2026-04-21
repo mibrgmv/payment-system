@@ -20,7 +20,7 @@ func NewHttpServer(ctx context.Context, config config.Config) (*http.Server, err
 	if err := accountv1.RegisterAccountServiceHandlerFromEndpoint(
 		ctx,
 		gwmux,
-		config.Services.Account.GetAddr(),
+		config.Services.Account.Addr(),
 		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
 	); err != nil {
 		return nil, fmt.Errorf("failed to register account service: %w", err)
@@ -29,7 +29,7 @@ func NewHttpServer(ctx context.Context, config config.Config) (*http.Server, err
 	if err := transactionv1.RegisterTransactionServiceHandlerFromEndpoint(
 		ctx,
 		gwmux,
-		config.Services.Transaction.GetAddr(),
+		config.Services.Transaction.Addr(),
 		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
 	); err != nil {
 		return nil, fmt.Errorf("failed to register transaction service: %w", err)
@@ -48,7 +48,7 @@ func NewHttpServer(ctx context.Context, config config.Config) (*http.Server, err
 	))
 
 	return &http.Server{
-		Addr:    config.Server.GetAddr(),
+		Addr:    config.Server.Addr(),
 		Handler: mux,
 	}, nil
 }
