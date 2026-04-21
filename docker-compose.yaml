@@ -2,7 +2,7 @@ services:
   payment-gateway:
     container_name: payment-gateway
     build:
-      context: services/gateway
+      context: gateway
       dockerfile: Dockerfile
       target: gateway
     ports:
@@ -22,7 +22,7 @@ services:
   account-kafka-publisher:
     container_name: account-kafka-publisher
     build:
-      context: services/account
+      context: account
       dockerfile: Dockerfile
       target: account-kafka-publisher
     environment:
@@ -41,7 +41,7 @@ services:
   account-kafka-processor:
     container_name: account-kafka-processor
     build:
-      context: services/account
+      context: account
       dockerfile: Dockerfile
       target: account-kafka-processor
     environment:
@@ -60,7 +60,7 @@ services:
   account-service:
     container_name: account-service
     build:
-      context: services/account
+      context: account
       dockerfile: Dockerfile
       target: account-service
     ports:
@@ -98,7 +98,7 @@ services:
   transaction-kafka-publisher:
     container_name: transaction-kafka-publisher
     build:
-      context: services/transaction
+      context: transaction
       dockerfile: Dockerfile
       target: transaction-kafka-publisher
     environment:
@@ -117,7 +117,7 @@ services:
   transaction-kafka-processor:
     container_name: transaction-kafka-processor
     build:
-      context: services/transaction
+      context: transaction
       dockerfile: Dockerfile
       target: transaction-kafka-processor
     environment:
@@ -136,7 +136,7 @@ services:
   transaction-service:
     container_name: transaction-service
     build:
-      context: services/transaction
+      context: transaction
       dockerfile: Dockerfile
       target: transaction-service
     ports:

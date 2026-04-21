@@ -26,25 +26,25 @@ gen: gen-gateway gen-account gen-transaction
 
 gen-gateway:
 	@echo "Generating gateway service protobuf..."
-	cd services/gateway && make gen
+	cd gateway && make gen
 
 gen-account:
 	@echo "Generating account service protobuf..."
-	cd services/account && make gen
+	cd account && make gen
 
 gen-transaction:
 	@echo "Generating transaction service protobuf..."
-	cd services/transaction && make gen
+	cd transaction && make gen
 
 test: test-account test-transaction test-shared
 
 test-account:
 	@echo "Running account service tests..."
-	cd services/account && make test
+	cd account && make test
 
 test-transaction:
 	@echo "Running transaction service tests..."
-	cd services/transaction && make test
+	cd transaction && make test
 
 test-shared:
 	@echo "Running shared module tests..."
